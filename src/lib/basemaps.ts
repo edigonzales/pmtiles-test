@@ -1,6 +1,6 @@
 import type { StyleSpecification } from 'maplibre-gl';
 
-export type BasemapId = 'osm' | 'wms' | 'swisstopo';
+export type BasemapId = 'empty' | 'osm' | 'wms' | 'swisstopo';
 
 export interface BasemapConfig {
   id: BasemapId;
@@ -27,6 +27,21 @@ const osmStyle: StyleSpecification = {
       source: 'osm',
       minzoom: 0,
       maxzoom: 19
+    }
+  ]
+};
+
+const emptyStyle: StyleSpecification = {
+  version: 8,
+  name: 'Empty',
+  sources: {},
+  layers: [
+    {
+      id: 'empty-background',
+      type: 'background',
+      paint: {
+        'background-color': '#ffffff'
+      }
     }
   ]
 };
@@ -59,6 +74,12 @@ const swisstopoStyle =
   'https://vectortiles.geo.admin.ch/styles/ch.swisstopo.basemap.vt/style.json?key=xmETqTBaiAH9bbZXXiFm';
 
 export const basemapConfigs: Record<BasemapId, BasemapConfig> = {
+  empty: {
+    id: 'empty',
+    label: 'Empty',
+    description: 'A blank white background suitable for focusing on overlay data.',
+    style: emptyStyle
+  },
   osm: {
     id: 'osm',
     label: 'OpenStreetMap',
