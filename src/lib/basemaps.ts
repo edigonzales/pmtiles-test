@@ -53,7 +53,7 @@ const hintergrundkarteStyle: StyleSpecification = {
     hintergrundkarte: {
       type: 'raster',
       tiles: [
-        'https://geo.so.ch/api/wms?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&FORMAT=image/png&TRANSPARENT=true&LAYERS=ch.so.agi.hintergrundkarte_sw&STYLES=&CRS=EPSG:3857&WIDTH=256&HEIGHT=256&DPI=96&OPACITIES=255&BBOX={bbox-epsg-3857}'
+        '/api/wms?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&FORMAT=image/png&TRANSPARENT=true&LAYERS=ch.so.agi.hintergrundkarte_sw&STYLES=&CRS=EPSG:3857&WIDTH=256&HEIGHT=256&DPI=96&OPACITIES=255&BBOX={bbox-epsg-3857}'
       ],
       tileSize: 256,
       attribution: '© Amt für Geoinformation Kanton Solothurn'

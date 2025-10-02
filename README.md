@@ -35,6 +35,15 @@ npm run test
 
 To display your PMTiles data, update the `pmtilesLayers` array in `src/routes/+page.svelte` with the sources and layers you want to show. Each entry supports vector or raster sources and can be styled with MapLibre paint and layout properties.
 
+## WMS proxy cache
+
+Requests to the "Hintergrundkarte schwarz/weiss" layer are routed through `/api/wms`, which caches PNG responses on disk to reduce load on the upstream service. You can control the cache with the following environment variables:
+
+- `WMS_CACHE_DIR` – directory used to store cached tiles (defaults to `.wms-cache` in the project root).
+- `WMS_CACHE_MAX_BYTES` – maximum cache size in bytes before the oldest entries are pruned (defaults to 10 GB).
+- `WMS_CACHE_MAX_AGE_MS` – time-to-live for cached PNGs in milliseconds (defaults to one day).
+- `WMS_PROXY_BASE_URL` – upstream WMS base URL (defaults to `https://geo.so.ch/api/wms`).
+
 ## Production build
 
 Create a production build with:
