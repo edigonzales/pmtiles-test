@@ -22,4 +22,14 @@ describe('basemap configurations', () => {
     }
     expect(wms.style.layers[0].type).toBe('raster');
   });
+
+  it('includes the swisstopo vector basemap style URL', () => {
+    const swisstopo = basemapConfigs.swisstopo;
+    if (typeof swisstopo.style === 'string') {
+      expect(swisstopo.style).toContain('vectortiles.geo.admin.ch/styles/ch.swisstopo.basemap');
+      expect(swisstopo.style).toContain('style.json');
+    } else {
+      throw new Error('swisstopo style should be provided as a hosted style URL');
+    }
+  });
 });

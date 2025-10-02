@@ -1,12 +1,12 @@
 import type { StyleSpecification } from 'maplibre-gl';
 
-export type BasemapId = 'osm' | 'wms';
+export type BasemapId = 'osm' | 'wms' | 'swisstopo';
 
 export interface BasemapConfig {
   id: BasemapId;
   label: string;
   description: string;
-  style: StyleSpecification;
+  style: StyleSpecification | string;
 }
 
 const osmStyle: StyleSpecification = {
@@ -55,6 +55,9 @@ const wmsStyle: StyleSpecification = {
   ]
 };
 
+const swisstopoStyle =
+  'https://vectortiles.geo.admin.ch/styles/ch.swisstopo.basemap.vt/style.json?key=xmETqTBaiAH9bbZXXiFm';
+
 export const basemapConfigs: Record<BasemapId, BasemapConfig> = {
   osm: {
     id: 'osm',
@@ -67,6 +70,12 @@ export const basemapConfigs: Record<BasemapId, BasemapConfig> = {
     label: 'Demo WMS (US States)',
     description: 'Example WMS service served as raster tiles from ahocevar.com.',
     style: wmsStyle
+  },
+  swisstopo: {
+    id: 'swisstopo',
+    label: 'swisstopo Vector Basemap',
+    description: 'Official Swiss vector basemap provided by swisstopo.',
+    style: swisstopoStyle
   }
 };
 
