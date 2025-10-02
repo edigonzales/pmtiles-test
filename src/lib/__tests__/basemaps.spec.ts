@@ -12,6 +12,12 @@ describe('basemap configurations', () => {
     }
   });
 
+  it('includes an empty white basemap', () => {
+    const empty = basemapConfigs.empty;
+    expect(empty.style.layers[0].type).toBe('background');
+    expect(empty.style.layers[0].paint?.['background-color']).toBe('#ffffff');
+  });
+
   it('includes a demo WMS layer', () => {
     const wms = basemapConfigs.wms;
     const source = wms.style.sources.states;
