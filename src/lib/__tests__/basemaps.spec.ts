@@ -1,12 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { basemapConfigs } from '$lib/basemaps';
+import type { BasemapConfig } from '$lib/basemaps';
+import type { StyleSpecification } from 'maplibre-gl';
+
+const getInlineStyle = (config: BasemapConfig): StyleSpecification => {
+  if (typeof config.style === 'string') {
+    throw new Error('Expected an inline style specification but received a URL.');
+  }
+
+  return config.style;
+};
 
 describe('basemap configurations', () => {
   it('includes OpenStreetMap raster tiles', () => {
     const osm = basemapConfigs.osm;
-    expect(osm.style.sources.osm.type).toBe('raster');
-    if ('tiles' in osm.style.sources.osm && Array.isArray(osm.style.sources.osm.tiles)) {
-      expect(osm.style.sources.osm.tiles[0]).toContain('tile.openstreetmap.org');
+    const style = getInlineStyle(osm);
+    expect(style.sources.osm.type).toBe('raster');
+    if ('tiles' in style.sources.osm && Array.isArray(style.sources.osm.tiles)) {
+      expect(style.sources.osm.tiles[0]).toContain('tile.openstreetmap.org');
     } else {
       throw new Error('OSM style missing tile URL');
     }
@@ -14,20 +25,27 @@ describe('basemap configurations', () => {
 
   it('includes an empty white basemap', () => {
     const empty = basemapConfigs.empty;
-    expect(empty.style.layers[0].type).toBe('background');
-    expect(empty.style.layers[0].paint?.['background-color']).toBe('#ffffff');
+    const style = getInlineStyle(empty);
+    expect(style.layers[0].type).toBe('background');
+    const paint = style.layers[0].paint;
+    if (paint && 'background-color' in paint) {
+      expect(paint['background-color']).toBe('#ffffff');
+    } else {
+      throw new Error('Empty style missing background color.');
+    }
   });
 
   it('includes the Hintergrundkarte schwarz/weiss WMS layer', () => {
     const hintergrundkarte = basemapConfigs.hintergrundkarte;
-    const source = hintergrundkarte.style.sources.hintergrundkarte;
+    const style = getInlineStyle(hintergrundkarte);
+    const source = style.sources.hintergrundkarte;
     if ('tiles' in source && Array.isArray(source.tiles)) {
-      expect(source.tiles[0]).toContain('geo.so.ch');
+      expect(source.tiles[0]).toContain('/api/wms?');
       expect(source.tiles[0]).toContain('LAYERS=ch.so.agi.hintergrundkarte_sw');
     } else {
       throw new Error('Hintergrundkarte style missing tile URL');
     }
-    expect(hintergrundkarte.style.layers[0].type).toBe('raster');
+    expect(style.layers[0].type).toBe('raster');
   });
 
   it('includes the swisstopo vector basemap style URL', () => {
