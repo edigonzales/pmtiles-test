@@ -1,100 +1,117 @@
 <script lang="ts">
-  import { Content, Grid, Column, Tile, Select, SelectItem, InlineNotification } from 'carbon-components-svelte';
+  import { ComboBox } from 'carbon-components-svelte';
   import MapView from '$lib/components/MapView.svelte';
   import { basemapOptions, type BasemapId } from '$lib/basemaps';
   import type { PMTilesLayerConfig } from '$lib/types/pmtiles';
 
   type MapReadyEvent = CustomEvent<import('maplibre-gl').Map>;
+  type BasemapOption = (typeof basemapOptions)[number];
+  type BasemapComboBoxItem = BasemapOption & { text: string };
+
+  if (!basemapOptions.length) {
+    throw new Error('No basemap options configured.');
+  }
+
+  const basemapItems: BasemapComboBoxItem[] = basemapOptions.map((option) => ({
+    ...option,
+    text: option.label
+  }));
+
+  const initialBasemap =
+    basemapItems.find((option) => option.id === 'osm') ?? basemapItems[0];
 
   let mapLoaded = false;
-
-  // Configure your PMTiles layers here. By default no PMTiles are loaded.
   let pmtilesLayers: PMTilesLayerConfig[] = [];
-
-  let selectedBasemap: BasemapId = 'osm';
+  let selectedId: BasemapId = (initialBasemap?.id ?? basemapItems[0].id) as BasemapId;
+  let selectedItem: BasemapComboBoxItem = initialBasemap ?? basemapItems[0];
+  let selectedBasemap: BasemapId = selectedItem.id as BasemapId;
 
   const handleReady = (_event: MapReadyEvent) => {
     mapLoaded = true;
   };
+
+  $: selectedItem =
+    basemapItems.find((item) => item.id === selectedId) ?? basemapItems[0];
+  $: selectedBasemap = selectedItem.id as BasemapId;
 </script>
 
-<Content>
-  <div class="page">
-    <Grid>
-      <Column sm={4} md={8} lg={16}>
-        <div class="control-panel">
-          <Tile>
-            <div class="tile-content">
-              <h1 class="heading">PMTiles MapLibre starter</h1>
-              <p class="body">Select a basemap and plug in your PMTiles sources to get started.</p>
-              <Select id="basemap-select" labelText="Basemap" bind:selected={selectedBasemap}>
-                {#each basemapOptions as option}
-                  <SelectItem value={option.id} text={option.label} />
-                {/each}
-              </Select>
-              <p class="helper-text">
-                {basemapOptions.find((option) => option.id === selectedBasemap)?.description}
-              </p>
-              <InlineNotification
-                kind="info"
-                title="Add your PMTiles"
-                subtitle="Update the pmtilesLayers array in +page.svelte to register your tile sources and layers."
-                hideCloseButton
-              />
-              <p class="status" data-testid="map-status">
-                {mapLoaded ? 'Map initialised' : 'Initialising map...'}
-              </p>
-            </div>
-          </Tile>
-        </div>
-      </Column>
-      <Column sm={4} md={8} lg={16}>
-        <div class="map-container">
-          <MapView basemap={selectedBasemap} pmtilesLayers={pmtilesLayers} on:ready={handleReady} />
-        </div>
-      </Column>
-    </Grid>
+<div class="map-page">
+  <MapView basemap={selectedBasemap} pmtilesLayers={pmtilesLayers} on:ready={handleReady} />
+
+  <div class="basemap-switcher">
+    <ComboBox
+      id="basemap-switcher"
+      class="combo-box"
+      hideLabel
+      titleText="Basemap"
+      placeholder="Choose a basemap"
+      items={basemapItems}
+      itemToString={(item) => (item ? item.text : '')}
+      helperText={selectedItem.description}
+      bind:selectedId={selectedId}
+    />
   </div>
-</Content>
+
+  <p class="map-status" data-testid="map-status">
+    {mapLoaded ? 'Map initialised' : 'Initialising map...'}
+  </p>
+</div>
 
 <style>
-  .page {
+  .map-page {
+    position: fixed;
+    inset: 0;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
   }
 
-  .control-panel {
-    display: flex;
+  .map-page :global(.map),
+  .map-page :global(.map-error) {
+    flex: 1 1 auto;
+    height: 100%;
   }
 
-  .tile-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+  .basemap-switcher {
+    position: absolute;
+    top: clamp(1rem, 4vw, 2.5rem);
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(90vw, 22rem);
+    padding: 0.5rem 0.75rem 0.75rem;
+    background: var(--cds-layer, #fff);
+    border: 1px solid var(--cds-border-subtle, #e0e0e0);
+    border-radius: 0;
   }
 
-  .heading {
+  .basemap-switcher :global(.combo-box) {
+    width: 100%;
+  }
+
+  .map-status {
+    position: absolute;
+    bottom: clamp(1rem, 4vw, 2.5rem);
+    left: 50%;
+    transform: translateX(-50%);
     margin: 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(22, 22, 22, 0.7);
+    color: #fff;
+    font-size: 0.875rem;
+    letter-spacing: 0.01em;
+    box-shadow: 0 0.5rem 1.5rem rgba(22, 22, 22, 0.25);
+    backdrop-filter: blur(6px);
   }
 
-  .body {
-    margin: 0;
-  }
+  @media (max-width: 480px) {
+    .basemap-switcher {
+      padding: 0.5rem 0.5rem 0.65rem;
+      backdrop-filter: blur(4px);
+    }
 
-  .helper-text {
-    margin: 0;
-    color: var(--cds-text-helper, #6f6f6f);
-  }
-
-  .status {
-    margin: 0;
-    font-weight: 600;
-  }
-
-  .map-container {
-    min-height: 70vh;
+    .map-status {
+      font-size: 0.75rem;
+      padding: 0.4rem 0.6rem;
+    }
   }
 </style>
