@@ -57,4 +57,16 @@ describe('basemap configurations', () => {
       throw new Error('swisstopo style should be provided as a hosted style URL');
     }
   });
+
+  it('includes the swisstopo imagery basemap style URL', () => {
+    const swisstopoImagery = basemapConfigs.swisstopoImagery;
+    if (typeof swisstopoImagery.style === 'string') {
+      expect(swisstopoImagery.style).toContain(
+        'vectortiles.geo.admin.ch/styles/ch.swisstopo.imagerybasemap'
+      );
+      expect(swisstopoImagery.style).toContain('style.json');
+    } else {
+      throw new Error('swisstopo imagery style should be provided as a hosted style URL');
+    }
+  });
 });

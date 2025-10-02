@@ -1,6 +1,11 @@
 import type { StyleSpecification } from 'maplibre-gl';
 
-export type BasemapId = 'empty' | 'osm' | 'hintergrundkarte' | 'swisstopo';
+export type BasemapId =
+  | 'empty'
+  | 'osm'
+  | 'hintergrundkarte'
+  | 'swisstopo'
+  | 'swisstopoImagery';
 
 export interface BasemapConfig {
   id: BasemapId;
@@ -73,12 +78,21 @@ const hintergrundkarteStyle: StyleSpecification = {
 const swisstopoStyle =
   'https://vectortiles.geo.admin.ch/styles/ch.swisstopo.basemap.vt/style.json?key=xmETqTBaiAH9bbZXXiFm';
 
+const swisstopoImageryStyle =
+  'https://vectortiles.geo.admin.ch/styles/ch.swisstopo.imagerybasemap.vt/style.json?key=xmETqTBaiAH9bbZXXiFm';
+
 export const basemapConfigs: Record<BasemapId, BasemapConfig> = {
   swisstopo: {
     id: 'swisstopo',
     label: 'swisstopo Vector Basemap',
     description: 'Official Swiss vector basemap provided by swisstopo.',
     style: swisstopoStyle
+  },
+  swisstopoImagery: {
+    id: 'swisstopoImagery',
+    label: 'swisstopo Imagery Basemap',
+    description: 'High-resolution imagery basemap provided by swisstopo.',
+    style: swisstopoImageryStyle
   },
   hintergrundkarte: {
     id: 'hintergrundkarte',
@@ -103,6 +117,7 @@ export const basemapConfigs: Record<BasemapId, BasemapConfig> = {
 export const basemapOptions: BasemapConfig[] = [
   basemapConfigs.swisstopo,
   basemapConfigs.hintergrundkarte,
+  basemapConfigs.swisstopoImagery,
   basemapConfigs.osm,
   basemapConfigs.empty
 ];
