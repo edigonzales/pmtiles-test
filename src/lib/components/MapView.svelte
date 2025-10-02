@@ -8,7 +8,7 @@
   import type { Map as MaplibreMap } from 'maplibre-gl';
   import type { PMTilesLayerConfig } from '$lib/types/pmtiles';
 
-  export let basemap: BasemapId = 'osm';
+  export let basemap: BasemapId = 'swisstopo';
   export let center: [number, number] = [7.64, 47.3];
   export let zoom = 9;
   export let pitch = 0;

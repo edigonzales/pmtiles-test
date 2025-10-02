@@ -18,7 +18,7 @@
   }));
 
   const initialBasemap =
-    basemapItems.find((option) => option.id === 'osm') ?? basemapItems[0];
+    basemapItems.find((option) => option.id === 'swisstopo') ?? basemapItems[0];
 
   let mapLoaded = false;
   let pmtilesLayers: PMTilesLayerConfig[] = [];
