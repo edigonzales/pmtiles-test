@@ -1,6 +1,6 @@
 import type { StyleSpecification } from 'maplibre-gl';
 
-export type BasemapId = 'empty' | 'osm' | 'wms' | 'swisstopo';
+export type BasemapId = 'empty' | 'osm' | 'hintergrundkarte' | 'swisstopo';
 
 export interface BasemapConfig {
   id: BasemapId;
@@ -33,7 +33,7 @@ const osmStyle: StyleSpecification = {
 
 const emptyStyle: StyleSpecification = {
   version: 8,
-  name: 'Empty',
+  name: 'No background',
   sources: {},
   layers: [
     {
@@ -46,26 +46,26 @@ const emptyStyle: StyleSpecification = {
   ]
 };
 
-const wmsStyle: StyleSpecification = {
+const hintergrundkarteStyle: StyleSpecification = {
   version: 8,
-  name: 'US States WMS',
+  name: 'Hintergrundkarte schwarz/weiss',
   sources: {
-    states: {
+    hintergrundkarte: {
       type: 'raster',
       tiles: [
-        'https://ahocevar.com/geoserver/wms?service=WMS&request=GetMap&layers=topp:states&styles=&format=image/png&transparent=true&version=1.1.1&height=256&width=256&srs=EPSG:3857&bbox={bbox-epsg-3857}'
+        'https://geo.so.ch/api/wms?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&FORMAT=image/png&TRANSPARENT=true&LAYERS=ch.so.agi.hintergrundkarte_sw&STYLES=&CRS=EPSG:3857&WIDTH=256&HEIGHT=256&DPI=96&OPACITIES=255&BBOX={bbox-epsg-3857}'
       ],
       tileSize: 256,
-      attribution: '© Ahocevar.com demo WMS'
+      attribution: '© Amt für Geoinformation Kanton Solothurn'
     }
   },
   layers: [
     {
-      id: 'wms-basemap',
+      id: 'hintergrundkarte-basemap',
       type: 'raster',
-      source: 'states',
+      source: 'hintergrundkarte',
       minzoom: 0,
-      maxzoom: 12
+      maxzoom: 19
     }
   ]
 };
@@ -74,11 +74,17 @@ const swisstopoStyle =
   'https://vectortiles.geo.admin.ch/styles/ch.swisstopo.basemap.vt/style.json?key=xmETqTBaiAH9bbZXXiFm';
 
 export const basemapConfigs: Record<BasemapId, BasemapConfig> = {
-  empty: {
-    id: 'empty',
-    label: 'Empty',
-    description: 'A blank white background suitable for focusing on overlay data.',
-    style: emptyStyle
+  swisstopo: {
+    id: 'swisstopo',
+    label: 'swisstopo Vector Basemap',
+    description: 'Official Swiss vector basemap provided by swisstopo.',
+    style: swisstopoStyle
+  },
+  hintergrundkarte: {
+    id: 'hintergrundkarte',
+    label: 'Hintergrundkarte schwarz/weiss',
+    description: 'Black and white background map provided by geo.so.ch.',
+    style: hintergrundkarteStyle
   },
   osm: {
     id: 'osm',
@@ -86,18 +92,17 @@ export const basemapConfigs: Record<BasemapId, BasemapConfig> = {
     description: 'Community driven basemap sourced from openstreetmap.org tiles.',
     style: osmStyle
   },
-  wms: {
-    id: 'wms',
-    label: 'Demo WMS (US States)',
-    description: 'Example WMS service served as raster tiles from ahocevar.com.',
-    style: wmsStyle
-  },
-  swisstopo: {
-    id: 'swisstopo',
-    label: 'swisstopo Vector Basemap',
-    description: 'Official Swiss vector basemap provided by swisstopo.',
-    style: swisstopoStyle
+  empty: {
+    id: 'empty',
+    label: 'No background',
+    description: 'A blank white background suitable for focusing on overlay data.',
+    style: emptyStyle
   }
 };
 
-export const basemapOptions = Object.values(basemapConfigs);
+export const basemapOptions: BasemapConfig[] = [
+  basemapConfigs.swisstopo,
+  basemapConfigs.hintergrundkarte,
+  basemapConfigs.osm,
+  basemapConfigs.empty
+];

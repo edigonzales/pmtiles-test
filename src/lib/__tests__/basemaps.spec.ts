@@ -18,15 +18,16 @@ describe('basemap configurations', () => {
     expect(empty.style.layers[0].paint?.['background-color']).toBe('#ffffff');
   });
 
-  it('includes a demo WMS layer', () => {
-    const wms = basemapConfigs.wms;
-    const source = wms.style.sources.states;
+  it('includes the Hintergrundkarte schwarz/weiss WMS layer', () => {
+    const hintergrundkarte = basemapConfigs.hintergrundkarte;
+    const source = hintergrundkarte.style.sources.hintergrundkarte;
     if ('tiles' in source && Array.isArray(source.tiles)) {
-      expect(source.tiles[0]).toContain('geoserver');
+      expect(source.tiles[0]).toContain('geo.so.ch');
+      expect(source.tiles[0]).toContain('LAYERS=ch.so.agi.hintergrundkarte_sw');
     } else {
-      throw new Error('WMS style missing tile URL');
+      throw new Error('Hintergrundkarte style missing tile URL');
     }
-    expect(wms.style.layers[0].type).toBe('raster');
+    expect(hintergrundkarte.style.layers[0].type).toBe('raster');
   });
 
   it('includes the swisstopo vector basemap style URL', () => {
