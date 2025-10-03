@@ -1,52 +1,8 @@
 import type { DatasetMetadata, DatasetSearchResult } from '$lib/types/dataset';
+import { normalise } from '$lib/services/datasetSearch.shared';
 
 const DATASET_ENDPOINT = '/api/datasets';
-
-const searchableFields: Array<keyof DatasetMetadata | 'keywords'> = [
-  'title',
-  'summary',
-  'description',
-  'theme',
-  'provider',
-  'keywords'
-];
-
-const fieldWeights: Record<string, number> = {
-  title: 4,
-  summary: 3,
-  description: 2,
-  theme: 2,
-  provider: 1,
-  keywords: 3
-};
-
-const normalise = (value: string) => value.trim().toLowerCase();
-
-const collectMatches = (dataset: DatasetMetadata, query: string) => {
-  const matches = new Set<string>();
-  let score = 0;
-
-  for (const field of searchableFields) {
-    const weight = fieldWeights[field] ?? 1;
-    if (field === 'keywords') {
-      if (dataset.keywords.some((keyword) => normalise(keyword).includes(query))) {
-        matches.add('keywords');
-        score += weight;
-      }
-    } else {
-      const value = dataset[field];
-      if (typeof value === 'string' && normalise(value).includes(query)) {
-        matches.add(field);
-        score += weight;
-      }
-    }
-  }
-
-  return { matches: Array.from(matches), score };
-};
-
-let catalogCache: DatasetMetadata[] | null = null;
-let inflightCatalog: Promise<DatasetMetadata[]> | null = null;
+const DATASET_SEARCH_ENDPOINT = '/api/dataset-search';
 
 const parseCatalogPayload = (payload: unknown): DatasetMetadata[] => {
   if (Array.isArray(payload)) {
@@ -65,67 +21,44 @@ const parseCatalogPayload = (payload: unknown): DatasetMetadata[] => {
   throw new Error('Unexpected dataset catalog payload.');
 };
 
-const fetchCatalog = async (): Promise<DatasetMetadata[]> => {
-  if (catalogCache) {
-    return catalogCache;
-  }
-
-  if (inflightCatalog) {
-    return inflightCatalog;
-  }
-
+export const getDatasetCatalog = async (): Promise<DatasetMetadata[]> => {
   if (typeof fetch === 'undefined') {
     throw new Error('Fetch API is not available in this environment.');
   }
 
-  inflightCatalog = fetch(DATASET_ENDPOINT)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Failed to load dataset catalog (${response.status})`);
-      }
-      return response.json();
-    })
-    .then((payload) => {
-      const catalog = parseCatalogPayload(payload);
-      catalogCache = catalog;
-      return catalog;
-    })
-    .finally(() => {
-      inflightCatalog = null;
-    });
+  const response = await fetch(DATASET_ENDPOINT);
 
-  return inflightCatalog;
-};
+  if (!response.ok) {
+    throw new Error(`Failed to load dataset catalog (${response.status})`);
+  }
 
-export const clearDatasetCatalogCache = () => {
-  catalogCache = null;
+  const payload = await response.json();
+  return parseCatalogPayload(payload);
 };
 
 export const searchDatasets = async (query: string): Promise<DatasetSearchResult[]> => {
-  const datasets = await fetchCatalog();
   const normalisedQuery = normalise(query);
 
   if (!normalisedQuery) {
     return [];
   }
 
-  const results: DatasetSearchResult[] = [];
-
-  for (const dataset of datasets) {
-    const { matches, score } = collectMatches(dataset, normalisedQuery);
-    if (score > 0) {
-      results.push({ dataset, score, matches });
-    }
+  if (typeof fetch === 'undefined') {
+    throw new Error('Fetch API is not available in this environment.');
   }
 
-  results.sort((a, b) => {
-    if (b.score === a.score) {
-      return a.dataset.title.localeCompare(b.dataset.title);
-    }
-    return b.score - a.score;
-  });
+  const searchParams = new URLSearchParams({ q: query.trim() });
+  const response = await fetch(`${DATASET_SEARCH_ENDPOINT}?${searchParams.toString()}`);
 
-  return results;
+  if (!response.ok) {
+    throw new Error(`Failed to search dataset catalog (${response.status})`);
+  }
+
+  const payload = await response.json();
+
+  if (!Array.isArray(payload)) {
+    throw new Error('Unexpected dataset search payload.');
+  }
+
+  return payload as DatasetSearchResult[];
 };
-
-export const getDatasetCatalog = async (): Promise<DatasetMetadata[]> => fetchCatalog();
