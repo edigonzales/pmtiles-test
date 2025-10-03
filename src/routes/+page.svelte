@@ -209,6 +209,8 @@
   const getDatasetVersion = (dataset: DatasetMetadata, versionId: string) =>
     dataset.versions.find((version) => version.id === versionId);
 
+  const getLatestVersion = (dataset: DatasetMetadata) => dataset.versions[0] ?? null;
+
   const isResultExpanded = (datasetId: string) => expandedResultIds.has(datasetId);
 
   const toggleResultExpanded = (datasetId: string) => {
@@ -306,9 +308,6 @@
           on:input={handleSearchInput}
           on:clear={handleSearchClear}
         />
-        <Button type="submit" size="default" kind="primary" class="search-form__submit" disabled={searching}
-          >Search</Button
-        >
       </form>
 
       {#if searching}
@@ -347,6 +346,7 @@
               </button>
 
               {#if isResultExpanded(result.dataset.id)}
+                {@const latestVersion = getLatestVersion(result.dataset)}
                 <div
                   class="result-card__details"
                   id={`result-details-${result.dataset.id}`}
@@ -355,15 +355,78 @@
                     <Tag type="cool-gray" size="sm">{result.dataset.theme}</Tag>
                     <Tag type="teal" size="sm">{result.dataset.geometryType}</Tag>
                   </div>
-                  <p class="result-card__summary">{result.dataset.summary}</p>
                   <div class="result-card__meta">
-                    <span class="result-card__provider">{result.dataset.provider}</span>
-                    {#if result.matches.length}
-                      <div class="result-card__matches">
-                        {#each result.matches as match}
-                          <Tag type="blue" size="sm">{match}</Tag>
+                    <div class="result-card__provider">{result.dataset.provider}</div>
+                    <div class="result-card__summary">{result.dataset.summary}</div>
+                  </div>
+                  <p class="result-card__description">{result.dataset.description}</p>
+                  <div class="result-card__info-grid">
+                    <dl class="result-card__definition-list">
+                      <div>
+                        <dt>Default style</dt>
+                        <dd>
+                          {result.dataset.styles.find((style) => style.id === result.dataset.defaultStyleId)?.label}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Default version</dt>
+                        <dd>
+                          {result.dataset.versions.find((version) => version.id === result.dataset.defaultVersionId)?.label}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Source layer</dt>
+                        <dd>{result.dataset.mapConfig.sourceLayer ?? '—'}</dd>
+                      </div>
+                      <div>
+                        <dt>Zoom range</dt>
+                        <dd>
+                          {result.dataset.mapConfig.minzoom ?? 0} – {result.dataset.mapConfig.maxzoom ?? 22}
+                        </dd>
+                      </div>
+                    </dl>
+                    <div class="result-card__keywords">
+                      <h3>Keywords</h3>
+                      <div class="result-card__keyword-tags">
+                        {#each result.dataset.keywords as keyword}
+                          <Tag type="purple" size="sm">{keyword}</Tag>
                         {/each}
                       </div>
+                      {#if result.matches.length}
+                        <div class="result-card__matches" aria-label="Search matches">
+                          {#each result.matches as match}
+                            <Tag type="blue" size="sm">{match}</Tag>
+                          {/each}
+                        </div>
+                      {/if}
+                    </div>
+                  </div>
+                  <div class="result-card__styles">
+                    <h3>Available styles</h3>
+                    <ul>
+                      {#each result.dataset.styles as style}
+                        <li>
+                          <div class="result-card__style-header">
+                            <span class="result-card__style-title">{style.label}</span>
+                            {#if style.id === result.dataset.defaultStyleId}
+                              <Tag type="green" size="sm">Default</Tag>
+                            {/if}
+                          </div>
+                          <p>{style.description}</p>
+                        </li>
+                      {/each}
+                    </ul>
+                  </div>
+                  <div class="result-card__latest-version">
+                    <h3>Latest version</h3>
+                    {#if latestVersion}
+                      <div class="result-card__latest-version-meta">
+                        <span>{latestVersion.label}</span>
+                        <span>{formatVersionRange(latestVersion)}</span>
+                      </div>
+                      <p>{latestVersion.summary}</p>
+                    {:else}
+                      <p>No version history available.</p>
                     {/if}
                   </div>
                   <div class="result-card__actions">
@@ -613,14 +676,11 @@
   }
 
   .search-form {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 0.5rem;
-    align-items: end;
+    display: block;
   }
 
-  :global(.search-form__submit) {
-    align-self: stretch;
+  .search-form :global(.cds--search) {
+    width: 100%;
   }
 
   .search-status {
@@ -674,8 +734,8 @@
   }
 
   .result-card__chevron {
-    width: 1rem;
-    height: 1rem;
+    width: 0.75rem;
+    height: 0.75rem;
     flex-shrink: 0;
     display: block;
     fill: currentColor;
@@ -698,28 +758,130 @@
     margin-top: 0.35rem;
   }
 
+  .result-card__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+    color: var(--cds-text-helper, #6f6f6f);
+  }
+
+  .result-card__provider {
+    font-weight: 600;
+    color: var(--cds-text-primary, #161616);
+  }
+
   .result-card__summary {
     margin: 0;
     color: var(--cds-text-secondary, #525252);
   }
 
-  .result-card__meta {
+  .result-card__description {
+    margin: 0;
+    color: var(--cds-text-secondary, #525252);
+    line-height: 1.6;
+  }
+
+  .result-card__info-grid {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 0.85rem;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .result-card__definition-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+  }
+
+  .result-card__definition-list div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .result-card__definition-list dt {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     color: var(--cds-text-helper, #6f6f6f);
   }
 
-  .result-card__provider {
-    font-weight: 500;
+  .result-card__definition-list dd {
+    margin: 0;
+    font-weight: 600;
+    color: var(--cds-text-primary, #161616);
   }
 
+  .result-card__keywords {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .result-card__keywords h3,
+  .result-card__styles h3,
+  .result-card__latest-version h3 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .result-card__keyword-tags,
   .result-card__matches {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.25rem;
+  }
+
+  .result-card__styles ul {
+    margin: 0;
+    padding-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    list-style: none;
+  }
+
+  .result-card__styles li {
+    list-style: none;
+    border-left: 2px solid var(--cds-border-strong-01, #8d8d8d);
+    padding-left: 0.75rem;
+  }
+
+  .result-card__style-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+  }
+
+  .result-card__style-title {
+    color: var(--cds-text-primary, #161616);
+  }
+
+  .result-card__styles p {
+    margin: 0.25rem 0 0;
+    color: var(--cds-text-secondary, #525252);
+  }
+
+  .result-card__latest-version {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .result-card__latest-version-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--cds-text-primary, #161616);
+  }
+
+  .result-card__latest-version p {
+    margin: 0;
+    color: var(--cds-text-secondary, #525252);
   }
 
   .result-card__actions {
