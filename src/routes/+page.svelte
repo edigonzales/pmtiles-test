@@ -217,8 +217,18 @@
     expandedResultState = { ...expandedResultState, [datasetId]: expanded };
   };
 
-  const toggleResultExpanded = (datasetId: string) => {
-    setResultExpanded(datasetId, !isResultExpanded(datasetId));
+  const handleResultCollapseToggle = (datasetId: string, event: Event) => {
+    const detailsElement = event.currentTarget as HTMLDetailsElement | null;
+    const expanded = detailsElement?.open ?? false;
+
+    console.debug('dataset-result: toggle', {
+      datasetId,
+      expanded,
+      via: event.type,
+      hasDetailsElement: Boolean(detailsElement)
+    });
+
+    setResultExpanded(datasetId, expanded);
   };
 
   const formatVersionRange = (version: DatasetVersion) => {
@@ -322,13 +332,17 @@
         <div class="results-list" aria-live="polite">
           {#each searchResults as result (result.dataset.id)}
             <Tile class="result-card">
-              <button
-                type="button"
-                class="result-card__toggle"
-                aria-expanded={isResultExpanded(result.dataset.id)}
-                aria-controls={`result-details-${result.dataset.id}`}
-                on:click={() => toggleResultExpanded(result.dataset.id)}
+              <details
+                class="result-card__collapse"
+                data-dataset-id={result.dataset.id}
+                open={isResultExpanded(result.dataset.id)}
+                on:toggle={(event) => handleResultCollapseToggle(result.dataset.id, event)}
               >
+                <summary
+                  class="result-card__toggle"
+                  aria-expanded={isResultExpanded(result.dataset.id)}
+                  aria-controls={`result-details-${result.dataset.id}`}
+                >
                 <span class="result-card__title" role="heading" aria-level="2">
                   {result.dataset.title}
                 </span>
@@ -341,7 +355,7 @@
                 >
                   <path d="M13.41 5.59 12 4.17 8 8.17l-4-4-1.41 1.42L8 11l5.41-5.41Z" />
                 </svg>
-              </button>
+              </summary>
 
               {#if isResultExpanded(result.dataset.id)}
                 {@const latestVersion = getLatestVersion(result.dataset)}
@@ -446,6 +460,7 @@
                   </div>
                 </div>
               {/if}
+              </details>
             </Tile>
           {/each}
         </div>
@@ -705,24 +720,37 @@
     gap: 0.75rem;
   }
 
+  .result-card__collapse {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0;
+  }
+
   .result-card__toggle {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
     width: 100%;
-    border: none;
-    background: transparent;
     padding: 0;
     cursor: pointer;
     text-align: left;
     color: inherit;
+    border: none;
+    background: transparent;
+    list-style: none;
   }
 
   .result-card__toggle:focus-visible {
     outline: 2px solid var(--cds-focus, #0f62fe);
     outline-offset: 2px;
     border-radius: 0.25rem;
+  }
+
+  .result-card__toggle::marker,
+  .result-card__toggle::-webkit-details-marker {
+    display: none;
   }
 
   .result-card__title {
