@@ -58,7 +58,7 @@
 
   let timelineModalOpen = false;
   let timelineDatasetId: string | null = null;
-  let expandedResultIds = new Set<string>();
+  let expandedResultState: Record<string, boolean> = {};
   let searchDebounce: ReturnType<typeof setTimeout> | null = null;
   let searchRequestId = 0;
 
@@ -67,7 +67,7 @@
       searchRequestId += 1;
     }
     searchResults = [];
-    expandedResultIds = new Set();
+    expandedResultState = {};
     searchError = null;
     searchPerformed = false;
   };
@@ -91,7 +91,7 @@
         return;
       }
       searchResults = results;
-      expandedResultIds = new Set();
+      expandedResultState = {};
       searchPerformed = true;
     } catch (error) {
       console.error('Failed to search datasets', error);
@@ -211,16 +211,14 @@
 
   const getLatestVersion = (dataset: DatasetMetadata) => dataset.versions[0] ?? null;
 
-  const isResultExpanded = (datasetId: string) => expandedResultIds.has(datasetId);
+  const isResultExpanded = (datasetId: string) => expandedResultState[datasetId] ?? false;
+
+  const setResultExpanded = (datasetId: string, expanded: boolean) => {
+    expandedResultState = { ...expandedResultState, [datasetId]: expanded };
+  };
 
   const toggleResultExpanded = (datasetId: string) => {
-    const next = new Set(expandedResultIds);
-    if (next.has(datasetId)) {
-      next.delete(datasetId);
-    } else {
-      next.add(datasetId);
-    }
-    expandedResultIds = next;
+    setResultExpanded(datasetId, !isResultExpanded(datasetId));
   };
 
   const formatVersionRange = (version: DatasetVersion) => {
