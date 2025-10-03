@@ -1,0 +1,390 @@
+import type {
+  DatasetMetadata,
+  DatasetSearchResult
+} from '$lib/types/dataset';
+
+const datasetCatalog: DatasetMetadata[] = [
+  {
+    id: 'ch.so.energy.solar-potential',
+    title: 'Solar Potential Roofs – Canton Solothurn',
+    summary: 'Detailed assessment of rooftop solar potential for every building in the canton.',
+    description:
+      'The dataset estimates the photovoltaic and solar thermal potential of building roofs using LiDAR derived surfaces and energy simulations. Attributes include irradiation levels, suitable area and recommended technology class.',
+    theme: 'Energy & Environment',
+    provider: 'Amt für Geoinformation Kanton Solothurn',
+    geometryType: 'Polygon',
+    keywords: ['solar', 'energy', 'rooftop', 'photovoltaic', 'thermal'],
+    defaultStyleId: 'potential-classes',
+    defaultVersionId: '2024-q2',
+    mapConfig: {
+      layerType: 'fill',
+      sourceType: 'vector',
+      sourceLayer: 'solar_potential',
+      minzoom: 12,
+      maxzoom: 18
+    },
+    styles: [
+      {
+        id: 'potential-classes',
+        label: 'Solar potential classes',
+        description: 'Choropleth style highlighting roofs by their photovoltaic potential class.',
+        paint: {
+          'fill-color': [
+            'match',
+            ['get', 'pv_class'],
+            'very_high',
+            '#42be65',
+            'high',
+            '#24a148',
+            'medium',
+            '#08bdba',
+            'low',
+            '#007d79',
+            'very_low',
+            '#005d5d',
+            '#3d5467'
+          ],
+          'fill-opacity': 0.75
+        }
+      },
+      {
+        id: 'technology-outline',
+        label: 'Technology outline',
+        description: 'Outlined representation showing the recommended technology per roof segment.',
+        layerTypeOverride: 'line',
+        paint: {
+          'line-color': [
+            'match',
+            ['get', 'tech'],
+            'pv',
+            '#0f62fe',
+            'thermal',
+            '#ff832b',
+            'hybrid',
+            '#8a3ffc',
+            '#525252'
+          ],
+          'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12,
+            0.4,
+            18,
+            2.2
+          ]
+        }
+      }
+    ],
+    versions: [
+      {
+        id: '2024-q2',
+        label: 'Q2 2024 release',
+        url: 'https://data.so.ch/pmtiles/solar-potential/solar_potential_2024_q2.pmtiles',
+        effectiveFrom: '2024-06-15',
+        summary: 'Incorporates 2023 aerial survey updates and refined irradiation modelling.',
+        changes: [
+          'Integrated 7,500 newly constructed roofs from the 2023 cadastral update.',
+          'Improved minimum irradiance threshold for narrow dormers.'
+        ]
+      },
+      {
+        id: '2023-q4',
+        label: 'Q4 2023 release',
+        url: 'https://data.so.ch/pmtiles/solar-potential/solar_potential_2023_q4.pmtiles',
+        effectiveFrom: '2023-11-02',
+        summary: 'Adds building refurbishments and enhanced shading model.',
+        changes: [
+          'Updated shading due to tree growth captured in 2022 LiDAR.',
+          'Recalculated photovoltaic performance for 3,100 roofs.'
+        ]
+      },
+      {
+        id: '2023-q1',
+        label: 'Q1 2023 release',
+        url: 'https://data.so.ch/pmtiles/solar-potential/solar_potential_2023_q1.pmtiles',
+        effectiveFrom: '2023-02-10',
+        summary: 'Baseline publication aligned with the energy strategy 2050.',
+        changes: ['Initial publication of canton-wide rooftop solar suitability.']
+      }
+    ]
+  },
+  {
+    id: 'ch.so.planning.zoning',
+    title: 'Municipal Zoning Plans',
+    summary: 'Current legally binding zoning ordinances harmonised for the entire canton.',
+    description:
+      'Generalised zoning polygons compiled from municipal plans. Each polygon contains land-use category, utilisation rate, building regulations, and legal references. Ideal for planning applications and permit checks.',
+    theme: 'Spatial Planning',
+    provider: 'Amt für Raumplanung Kanton Solothurn',
+    geometryType: 'Polygon',
+    keywords: ['zoning', 'land use', 'planning', 'ordinance'],
+    defaultStyleId: 'landuse-categories',
+    defaultVersionId: '2024-01',
+    mapConfig: {
+      layerType: 'fill',
+      sourceType: 'vector',
+      sourceLayer: 'zoning',
+      minzoom: 10,
+      maxzoom: 18
+    },
+    styles: [
+      {
+        id: 'landuse-categories',
+        label: 'Land-use categories',
+        description: 'Colour by harmonised land-use class with subtle outlines.',
+        paint: {
+          'fill-color': [
+            'match',
+            ['get', 'use'],
+            'residential',
+            '#ff832b',
+            'mixed',
+            '#f1c21b',
+            'commercial',
+            '#8a3ffc',
+            'industrial',
+            '#a56eff',
+            'green',
+            '#42be65',
+            'agricultural',
+            '#007d79',
+            '#3d3d3d'
+          ],
+          'fill-opacity': 0.6
+        },
+        layout: {
+          visibility: 'visible'
+        }
+      },
+      {
+        id: 'outline-only',
+        label: 'Outline only',
+        description: 'Transparent fill with emphasised zoning boundaries.',
+        paint: {
+          'fill-color': '#ffffff',
+          'fill-opacity': 0.05
+        },
+        layout: {
+          visibility: 'visible'
+        }
+      }
+    ],
+    versions: [
+      {
+        id: '2024-01',
+        label: 'January 2024 (harmonised)',
+        url: 'https://data.so.ch/pmtiles/zoning/zoning_2024_01.pmtiles',
+        effectiveFrom: '2024-01-20',
+        summary: 'Includes Bettlach, Grenchen and Oensingen revisions ratified late 2023.',
+        changes: [
+          'Added new mixed-use zone around Oensingen rail station.',
+          'Reclassified Bettlach industrial lots as technology park.'
+        ]
+      },
+      {
+        id: '2023-05',
+        label: 'May 2023 update',
+        url: 'https://data.so.ch/pmtiles/zoning/zoning_2023_05.pmtiles',
+        effectiveFrom: '2023-05-11',
+        summary: 'Incorporates legal changes up to April 2023.',
+        changes: [
+          'Extended residential zone in Derendingen west.',
+          'Updated agricultural reserve boundaries in Leimental.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'ch.so.transport.cycling-network',
+    title: 'Cycling Network & Quality Levels',
+    summary: 'Hierarchy of cycling infrastructure with safety and comfort ratings.',
+    description:
+      'Authoritative bicycle network dataset including on-road lanes, separated paths, and recommended connections. Attributes include surface type, width, slope, and a quality score derived from field surveys.',
+    theme: 'Mobility',
+    provider: 'Amt für Verkehr und Tiefbau Kanton Solothurn',
+    geometryType: 'Line',
+    keywords: ['cycling', 'mobility', 'transport', 'network'],
+    defaultStyleId: 'quality-levels',
+    defaultVersionId: '2024-routing',
+    mapConfig: {
+      layerType: 'line',
+      sourceType: 'vector',
+      sourceLayer: 'cycling',
+      minzoom: 8,
+      maxzoom: 18
+    },
+    styles: [
+      {
+        id: 'quality-levels',
+        label: 'Quality levels',
+        description: 'Colours reflect the comfort level for everyday cyclists.',
+        paint: {
+          'line-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'quality'],
+            1,
+            '#fa4d56',
+            3,
+            '#f1c21b',
+            5,
+            '#42be65'
+          ],
+          'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8,
+            1,
+            14,
+            3,
+            18,
+            6
+          ]
+        }
+      },
+      {
+        id: 'surface-type',
+        label: 'Surface type',
+        description: 'Alternative palette to distinguish paved versus unpaved segments.',
+        paint: {
+          'line-color': [
+            'match',
+            ['get', 'surface'],
+            'paved',
+            '#0f62fe',
+            'gravel',
+            '#8d3bff',
+            'dirt',
+            '#d2a106',
+            'unknown',
+            '#8d8d8d',
+            '#161616'
+          ],
+          'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8,
+            1,
+            14,
+            3.4,
+            18,
+            5.6
+          ],
+          'line-dasharray': [2, 2]
+        }
+      }
+    ],
+    versions: [
+      {
+        id: '2024-routing',
+        label: 'Routing network 2024',
+        url: 'https://data.so.ch/pmtiles/cycling/cycling_network_2024.pmtiles',
+        effectiveFrom: '2024-08-01',
+        summary: 'Aligns with the 2024 cantonal mobility programme.',
+        changes: [
+          'Quality rating reviewed after the 2023 safety audit.',
+          'Added separated lanes along Kantonsstrasse 12 in Olten.'
+        ]
+      },
+      {
+        id: '2023-routing',
+        label: 'Routing network 2023',
+        url: 'https://data.so.ch/pmtiles/cycling/cycling_network_2023.pmtiles',
+        effectiveFrom: '2023-07-05',
+        summary: 'Baseline routing network published with performance indicators.'
+      },
+      {
+        id: '2022-planning',
+        label: 'Planning network 2022',
+        url: 'https://data.so.ch/pmtiles/cycling/cycling_network_2022.pmtiles',
+        effectiveFrom: '2022-03-18',
+        summary: 'Historic planning version used for long-term projects.',
+        effectiveTo: '2023-07-04'
+      }
+    ]
+  }
+];
+
+const searchableFields: Array<keyof DatasetMetadata | 'keywords'> = [
+  'title',
+  'summary',
+  'description',
+  'theme',
+  'provider',
+  'keywords'
+];
+
+const fieldWeights: Record<string, number> = {
+  title: 4,
+  summary: 3,
+  description: 2,
+  theme: 2,
+  provider: 1,
+  keywords: 3
+};
+
+const normalise = (value: string) => value.trim().toLowerCase();
+
+const collectMatches = (dataset: DatasetMetadata, query: string) => {
+  const matches = new Set<string>();
+  let score = 0;
+
+  for (const field of searchableFields) {
+    const weight = fieldWeights[field] ?? 1;
+    if (field === 'keywords') {
+      if (dataset.keywords.some((keyword) => normalise(keyword).includes(query))) {
+        matches.add('keywords');
+        score += weight;
+      }
+    } else {
+      const value = dataset[field];
+      if (typeof value === 'string' && normalise(value).includes(query)) {
+        matches.add(field);
+        score += weight;
+      }
+    }
+  }
+
+  return { matches: Array.from(matches), score };
+};
+
+export const getDatasetById = (id: string) =>
+  datasetCatalog.find((dataset) => dataset.id === id) ?? null;
+
+export const getFeaturedDatasets = () => datasetCatalog.slice(0, 5);
+
+export const searchDatasets = async (query: string): Promise<DatasetSearchResult[]> => {
+  const normalisedQuery = normalise(query);
+
+  const results: DatasetSearchResult[] = [];
+
+  for (const dataset of datasetCatalog) {
+    if (!normalisedQuery) {
+      results.push({ dataset, score: 1, matches: ['featured'] });
+      continue;
+    }
+
+    const { matches, score } = collectMatches(dataset, normalisedQuery);
+    if (score > 0) {
+      results.push({ dataset, score, matches });
+    }
+  }
+
+  results.sort((a, b) => {
+    if (b.score === a.score) {
+      return a.dataset.title.localeCompare(b.dataset.title);
+    }
+    return b.score - a.score;
+  });
+
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(normalisedQuery ? results : results.slice(0, 5));
+    }, 320);
+  });
+};
+
+export { datasetCatalog };
