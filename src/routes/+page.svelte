@@ -217,18 +217,15 @@
     expandedResultState = { ...expandedResultState, [datasetId]: expanded };
   };
 
-  const handleResultCollapseToggle = (datasetId: string, event: Event) => {
-    const detailsElement = event.currentTarget as HTMLDetailsElement | null;
-    const expanded = detailsElement?.open ?? false;
+  const toggleResultExpanded = (datasetId: string) => {
+    const nextExpanded = !(expandedResultState[datasetId] ?? false);
 
     console.debug('dataset-result: toggle', {
       datasetId,
-      expanded,
-      via: event.type,
-      hasDetailsElement: Boolean(detailsElement)
+      expanded: nextExpanded
     });
 
-    setResultExpanded(datasetId, expanded);
+    setResultExpanded(datasetId, nextExpanded);
   };
 
   const formatVersionRange = (version: DatasetVersion) => {
@@ -332,37 +329,34 @@
         <div class="results-list" aria-live="polite">
           {#each searchResults as result (result.dataset.id)}
             <Tile class="result-card">
-              <details
-                class="result-card__collapse"
-                data-dataset-id={result.dataset.id}
-                open={isResultExpanded(result.dataset.id)}
-                on:toggle={(event) => handleResultCollapseToggle(result.dataset.id, event)}
-              >
-                <summary
+              <div class="result-card__collapse" data-dataset-id={result.dataset.id}>
+                <button
+                  type="button"
                   class="result-card__toggle"
                   aria-expanded={isResultExpanded(result.dataset.id)}
                   aria-controls={`result-details-${result.dataset.id}`}
+                  on:click={() => toggleResultExpanded(result.dataset.id)}
                 >
-                <span class="result-card__title" role="heading" aria-level="2">
-                  {result.dataset.title}
-                </span>
-                <svg
-                  class="result-card__chevron"
-                  class:result-card__chevron--expanded={isResultExpanded(result.dataset.id)}
-                  aria-hidden="true"
-                  focusable="false"
-                  viewBox="0 0 16 16"
-                >
-                  <path d="M13.41 5.59 12 4.17 8 8.17l-4-4-1.41 1.42L8 11l5.41-5.41Z" />
-                </svg>
-              </summary>
+                  <span class="result-card__title" role="heading" aria-level="2">
+                    {result.dataset.title}
+                  </span>
+                  <svg
+                    class="result-card__chevron"
+                    class:result-card__chevron--expanded={isResultExpanded(result.dataset.id)}
+                    aria-hidden="true"
+                    focusable="false"
+                    viewBox="0 0 16 16"
+                  >
+                    <path d="M13.41 5.59 12 4.17 8 8.17l-4-4-1.41 1.42L8 11l5.41-5.41Z" />
+                  </svg>
+                </button>
 
-              {#if isResultExpanded(result.dataset.id)}
-                {@const latestVersion = getLatestVersion(result.dataset)}
-                <div
-                  class="result-card__details"
-                  id={`result-details-${result.dataset.id}`}
-                >
+                {#if isResultExpanded(result.dataset.id)}
+                  {@const latestVersion = getLatestVersion(result.dataset)}
+                  <div
+                    class="result-card__details"
+                    id={`result-details-${result.dataset.id}`}
+                  >
                   <div class="result-card__tags">
                     <Tag type="cool-gray" size="sm">{result.dataset.theme}</Tag>
                     <Tag type="teal" size="sm">{result.dataset.geometryType}</Tag>
@@ -459,8 +453,8 @@
                     </Button>
                   </div>
                 </div>
-              {/if}
-              </details>
+                {/if}
+              </div>
             </Tile>
           {/each}
         </div>
