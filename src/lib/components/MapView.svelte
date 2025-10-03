@@ -23,6 +23,7 @@
   let maplibreModule: typeof import('maplibre-gl') | null = null;
   let pmtilesProtocol: import('pmtiles').Protocol | null = null;
   const attachedLayerIds = new Set<string>();
+  const layerStates = new Map<string, { sourceId: string; url: string }>();
   let pendingSync = false;
   let disposed = false;
   let loadError: string | null = null;
@@ -60,11 +61,23 @@
           map.removeSource(sourceId);
         }
         attachedLayerIds.delete(layerId);
+        layerStates.delete(layerId);
       }
     }
 
     for (const config of pmtilesLayers) {
       const sourceId = getSourceId(config.id);
+      const existingState = layerStates.get(config.id);
+      if (existingState && existingState.url !== config.url) {
+        if (map.getLayer(config.id)) {
+          map.removeLayer(config.id);
+        }
+        if (map.getSource(sourceId)) {
+          map.removeSource(sourceId);
+        }
+        attachedLayerIds.delete(config.id);
+        layerStates.delete(config.id);
+      }
       if (!map.getSource(sourceId)) {
         map.addSource(
           sourceId,
@@ -101,6 +114,7 @@
           }
         }
       }
+      layerStates.set(config.id, { sourceId, url: config.url });
     }
   };
 
@@ -165,6 +179,7 @@
   $: if (map && basemap && basemap !== currentBasemap && basemapConfigs[basemap]) {
     currentBasemap = basemap;
     attachedLayerIds.clear();
+    layerStates.clear();
     map.setStyle(basemapConfigs[basemap].style as any);
     map.once('load', () => {
       scheduleSync();
