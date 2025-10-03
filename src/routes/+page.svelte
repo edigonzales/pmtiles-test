@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import {
     Button,
     ComboBox,
@@ -62,28 +61,94 @@
   let timelineModalOpen = false;
   let timelineDatasetId: string | null = null;
   let expandedResultIds = new Set<string>();
+  let searchDebounce: ReturnType<typeof setTimeout> | null = null;
+  let searchRequestId = 0;
 
   const handleReady = (_event: MapReadyEvent) => {
     mapLoaded = true;
   };
 
+  const resetSearchState = (cancelOngoing = false) => {
+    if (cancelOngoing) {
+      searchRequestId += 1;
+    }
+    searchResults = [];
+    expandedResultIds = new Set();
+    searchError = null;
+    searchPerformed = false;
+  };
+
   const performSearch = async (term: string) => {
+    const trimmed = term.trim();
+
+    if (!trimmed) {
+      resetSearchState(true);
+      searching = false;
+      return;
+    }
+
+    const requestId = ++searchRequestId;
     searching = true;
     searchError = null;
+
     try {
-      searchResults = await searchDatasets(term);
+      const results = await searchDatasets(trimmed);
+      if (requestId !== searchRequestId) {
+        return;
+      }
+      searchResults = results;
       expandedResultIds = new Set();
       searchPerformed = true;
     } catch (error) {
       console.error('Failed to search datasets', error);
-      searchError = 'The search service is currently unavailable.';
+      if (requestId === searchRequestId) {
+        searchError = 'The search service is currently unavailable.';
+        searchPerformed = false;
+      }
     } finally {
-      searching = false;
+      if (requestId === searchRequestId) {
+        searching = false;
+      }
     }
+  };
+
+  const queueSearch = (term: string) => {
+    if (searchDebounce) {
+      clearTimeout(searchDebounce);
+      searchDebounce = null;
+    }
+
+    if (!term.trim()) {
+      resetSearchState(true);
+      searching = false;
+      return;
+    }
+
+    searchDebounce = setTimeout(() => {
+      void performSearch(term);
+    }, 250);
+  };
+
+  const handleSearchInput = () => {
+    queueSearch(searchTerm);
+  };
+
+  const handleSearchClear = () => {
+    if (searchDebounce) {
+      clearTimeout(searchDebounce);
+      searchDebounce = null;
+    }
+    searchTerm = '';
+    resetSearchState(true);
+    searching = false;
   };
 
   const handleSearchSubmit = async (event: Event) => {
     event.preventDefault();
+    if (searchDebounce) {
+      clearTimeout(searchDebounce);
+      searchDebounce = null;
+    }
     await performSearch(searchTerm);
   };
 
@@ -204,10 +269,6 @@
   $: timelineSelection = timelineDatasetId
     ? selectedDatasets.find((entry) => entry.dataset.id === timelineDatasetId) ?? null
     : null;
-
-  onMount(() => {
-    performSearch('');
-  });
 </script>
 
 <div class="page">
@@ -227,6 +288,7 @@
             class="combo-box"
             hideLabel
             titleText="Basemap"
+            direction="top"
             placeholder="Choose a basemap"
             items={basemapItems}
             itemToString={(item) => (item ? item.text : '')}
@@ -252,6 +314,8 @@
           labelText="Search datasets"
           placeholder="Search by title, theme, keyword..."
           bind:value={searchTerm}
+          on:input={handleSearchInput}
+          on:clear={handleSearchClear}
         />
         <Button type="submit" size="default" kind="primary" class="search-form__submit" disabled={searching}
           >Search</Button
@@ -621,6 +685,11 @@
   }
 
   .result-card__chevron {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    display: block;
+    fill: currentColor;
     transition: transform 0.2s ease;
   }
 
