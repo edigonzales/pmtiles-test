@@ -19,7 +19,6 @@
   } from '$lib/types/dataset';
   import { searchDatasets } from '$lib/services/datasetSearch';
 
-  type MapReadyEvent = CustomEvent<import('maplibre-gl').Map>;
   type BasemapOption = (typeof basemapOptions)[number];
   type BasemapComboBoxItem = BasemapOption & { text: string };
   type ComboBoxSelectDetail = {
@@ -45,7 +44,6 @@
     day: 'numeric'
   });
 
-  let mapLoaded = false;
   let pmtilesLayers: PMTilesLayerConfig[] = [];
   let selectedId: BasemapId = (initialBasemap?.id ?? basemapItems[0].id) as BasemapId;
   let selectedItem: BasemapComboBoxItem = initialBasemap ?? basemapItems[0];
@@ -63,10 +61,6 @@
   let expandedResultIds = new Set<string>();
   let searchDebounce: ReturnType<typeof setTimeout> | null = null;
   let searchRequestId = 0;
-
-  const handleReady = (_event: MapReadyEvent) => {
-    mapLoaded = true;
-  };
 
   const resetSearchState = (cancelOngoing = false) => {
     if (cancelOngoing) {
@@ -273,14 +267,9 @@
 
 <div class="page">
   <main class="map-area">
-    <MapView basemap={selectedBasemap} pmtilesLayers={pmtilesLayers} on:ready={handleReady} />
+    <MapView basemap={selectedBasemap} pmtilesLayers={pmtilesLayers} />
 
     <div class="map-overlays">
-      <div class="map-overlays__top">
-        <p class="map-status" data-testid="map-status">
-          {mapLoaded ? 'Map initialised' : 'Initialising map...'}
-        </p>
-      </div>
       <div class="map-overlays__bottom">
         <div class="map-overlays__panel">
           <ComboBox
@@ -292,9 +281,9 @@
             placeholder="Choose a basemap"
             items={basemapItems}
             itemToString={(item) => (item ? item.text : '')}
-            helperText={selectedItem.description}
             bind:selectedId={selectedId}
           />
+          <!-- helperText={selectedItem.description} -->
         </div>
       </div>
     </div>
@@ -520,7 +509,7 @@
 
 <style>
   .page {
-    --page-gap: clamp(1rem, 3vw, 2.5rem);
+    --page-gap: clamp(0.5rem, 1.5vw, 1.25rem);
     position: relative;
     width: 100vw;
     height: 100vh;
@@ -813,13 +802,8 @@
     pointer-events: none;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-end;
     padding: var(--page-gap);
-  }
-
-  .map-overlays__top {
-    display: flex;
-    justify-content: center;
   }
 
   .map-overlays__bottom {
@@ -838,19 +822,6 @@
 
   .map-overlays__panel :global(.combo-box) {
     width: min(18rem, 60vw);
-  }
-
-  .map-status {
-    margin: 0;
-    pointer-events: auto;
-    padding: 0.5rem 0.75rem;
-    border-radius: 999px;
-    background: rgba(22, 22, 22, 0.7);
-    color: #fff;
-    font-size: 0.875rem;
-    letter-spacing: 0.01em;
-    box-shadow: 0 0.5rem 1.5rem rgba(22, 22, 22, 0.25);
-    backdrop-filter: blur(6px);
   }
 
   .timeline-list {
@@ -919,9 +890,6 @@
       width: min(16rem, 70vw);
     }
 
-    .map-status {
-      font-size: 0.8rem;
-    }
   }
 
   @media (max-width: 480px) {
