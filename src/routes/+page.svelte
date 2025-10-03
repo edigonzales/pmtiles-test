@@ -211,21 +211,15 @@
 
   const getLatestVersion = (dataset: DatasetMetadata) => dataset.versions[0] ?? null;
 
-  const isResultExpanded = (datasetId: string) => expandedResultState[datasetId] ?? false;
-
-  const setResultExpanded = (datasetId: string, expanded: boolean) => {
-    expandedResultState = { ...expandedResultState, [datasetId]: expanded };
-  };
-
   const toggleResultExpanded = (datasetId: string) => {
     const nextExpanded = !(expandedResultState[datasetId] ?? false);
 
-    console.debug('dataset-result: toggle', {
+    console.log('dataset-result: toggle', {
       datasetId,
       expanded: nextExpanded
     });
 
-    setResultExpanded(datasetId, nextExpanded);
+    expandedResultState = { ...expandedResultState, [datasetId]: nextExpanded };
   };
 
   const formatVersionRange = (version: DatasetVersion) => {
@@ -328,12 +322,13 @@
       {#if searchResults.length}
         <div class="results-list" aria-live="polite">
           {#each searchResults as result (result.dataset.id)}
+            {@const expanded = !!expandedResultState[result.dataset.id]}
             <Tile class="result-card">
               <div class="result-card__collapse" data-dataset-id={result.dataset.id}>
                 <button
                   type="button"
                   class="result-card__toggle"
-                  aria-expanded={isResultExpanded(result.dataset.id)}
+                  aria-expanded={expanded}
                   aria-controls={`result-details-${result.dataset.id}`}
                   on:click={() => toggleResultExpanded(result.dataset.id)}
                 >
@@ -342,7 +337,7 @@
                   </span>
                   <svg
                     class="result-card__chevron"
-                    class:result-card__chevron--expanded={isResultExpanded(result.dataset.id)}
+                    class:result-card__chevron--expanded={expanded}
                     aria-hidden="true"
                     focusable="false"
                     viewBox="0 0 16 16"
@@ -351,108 +346,108 @@
                   </svg>
                 </button>
 
-                {#if isResultExpanded(result.dataset.id)}
+                {#if expanded}
                   {@const latestVersion = getLatestVersion(result.dataset)}
                   <div
                     class="result-card__details"
                     id={`result-details-${result.dataset.id}`}
                   >
-                  <div class="result-card__tags">
-                    <Tag type="cool-gray" size="sm">{result.dataset.theme}</Tag>
-                    <Tag type="teal" size="sm">{result.dataset.geometryType}</Tag>
-                  </div>
-                  <div class="result-card__meta">
-                    <div class="result-card__provider">{result.dataset.provider}</div>
-                    <div class="result-card__summary">{result.dataset.summary}</div>
-                  </div>
-                  <p class="result-card__description">{result.dataset.description}</p>
-                  <div class="result-card__info-grid">
-                    <dl class="result-card__definition-list">
-                      <div>
-                        <dt>Default style</dt>
-                        <dd>
-                          {result.dataset.styles.find((style) => style.id === result.dataset.defaultStyleId)?.label}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Default version</dt>
-                        <dd>
-                          {result.dataset.versions.find((version) => version.id === result.dataset.defaultVersionId)?.label}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Source layer</dt>
-                        <dd>{result.dataset.mapConfig.sourceLayer ?? '—'}</dd>
-                      </div>
-                      <div>
-                        <dt>Zoom range</dt>
-                        <dd>
-                          {result.dataset.mapConfig.minzoom ?? 0} – {result.dataset.mapConfig.maxzoom ?? 22}
-                        </dd>
-                      </div>
-                    </dl>
-                    <div class="result-card__keywords">
-                      <h3>Keywords</h3>
-                      <div class="result-card__keyword-tags">
-                        {#each result.dataset.keywords as keyword}
-                          <Tag type="purple" size="sm">{keyword}</Tag>
-                        {/each}
-                      </div>
-                      {#if result.matches.length}
-                        <div class="result-card__matches" aria-label="Search matches">
-                          {#each result.matches as match}
-                            <Tag type="blue" size="sm">{match}</Tag>
+                    <div class="result-card__tags">
+                      <Tag type="cool-gray" size="sm">{result.dataset.theme}</Tag>
+                      <Tag type="teal" size="sm">{result.dataset.geometryType}</Tag>
+                    </div>
+                    <div class="result-card__meta">
+                      <div class="result-card__provider">{result.dataset.provider}</div>
+                      <div class="result-card__summary">{result.dataset.summary}</div>
+                    </div>
+                    <p class="result-card__description">{result.dataset.description}</p>
+                    <div class="result-card__info-grid">
+                      <dl class="result-card__definition-list">
+                        <div>
+                          <dt>Default style</dt>
+                          <dd>
+                            {result.dataset.styles.find((style) => style.id === result.dataset.defaultStyleId)?.label}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Default version</dt>
+                          <dd>
+                            {result.dataset.versions.find((version) => version.id === result.dataset.defaultVersionId)?.label}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Source layer</dt>
+                          <dd>{result.dataset.mapConfig.sourceLayer ?? '—'}</dd>
+                        </div>
+                        <div>
+                          <dt>Zoom range</dt>
+                          <dd>
+                            {result.dataset.mapConfig.minzoom ?? 0} – {result.dataset.mapConfig.maxzoom ?? 22}
+                          </dd>
+                        </div>
+                      </dl>
+                      <div class="result-card__keywords">
+                        <h3>Keywords</h3>
+                        <div class="result-card__keyword-tags">
+                          {#each result.dataset.keywords as keyword}
+                            <Tag type="purple" size="sm">{keyword}</Tag>
                           {/each}
                         </div>
+                        {#if result.matches.length}
+                          <div class="result-card__matches" aria-label="Search matches">
+                            {#each result.matches as match}
+                              <Tag type="blue" size="sm">{match}</Tag>
+                            {/each}
+                          </div>
+                        {/if}
+                      </div>
+                    </div>
+                    <div class="result-card__styles">
+                      <h3>Available styles</h3>
+                      <ul>
+                        {#each result.dataset.styles as style}
+                          <li>
+                            <div class="result-card__style-header">
+                              <span class="result-card__style-title">{style.label}</span>
+                              {#if style.id === result.dataset.defaultStyleId}
+                                <Tag type="green" size="sm">Default</Tag>
+                              {/if}
+                            </div>
+                            <p>{style.description}</p>
+                          </li>
+                        {/each}
+                      </ul>
+                    </div>
+                    <div class="result-card__latest-version">
+                      <h3>Latest version</h3>
+                      {#if latestVersion}
+                        <div class="result-card__latest-version-meta">
+                          <span>{latestVersion.label}</span>
+                          <span>{formatVersionRange(latestVersion)}</span>
+                        </div>
+                        <p>{latestVersion.summary}</p>
+                      {:else}
+                        <p>No version history available.</p>
                       {/if}
                     </div>
+                    <div class="result-card__actions">
+                      <Button
+                        kind="primary"
+                        size="small"
+                        disabled={datasetAlreadyAdded(result.dataset)}
+                        on:click={() => addDataset(result.dataset)}
+                      >
+                        {datasetAlreadyAdded(result.dataset) ? 'Already on map' : 'Add to map'}
+                      </Button>
+                      <Button
+                        kind="ghost"
+                        size="small"
+                        on:click={() => openTimeline(result.dataset.id)}
+                      >
+                        View versions
+                      </Button>
+                    </div>
                   </div>
-                  <div class="result-card__styles">
-                    <h3>Available styles</h3>
-                    <ul>
-                      {#each result.dataset.styles as style}
-                        <li>
-                          <div class="result-card__style-header">
-                            <span class="result-card__style-title">{style.label}</span>
-                            {#if style.id === result.dataset.defaultStyleId}
-                              <Tag type="green" size="sm">Default</Tag>
-                            {/if}
-                          </div>
-                          <p>{style.description}</p>
-                        </li>
-                      {/each}
-                    </ul>
-                  </div>
-                  <div class="result-card__latest-version">
-                    <h3>Latest version</h3>
-                    {#if latestVersion}
-                      <div class="result-card__latest-version-meta">
-                        <span>{latestVersion.label}</span>
-                        <span>{formatVersionRange(latestVersion)}</span>
-                      </div>
-                      <p>{latestVersion.summary}</p>
-                    {:else}
-                      <p>No version history available.</p>
-                    {/if}
-                  </div>
-                  <div class="result-card__actions">
-                    <Button
-                      kind="primary"
-                      size="small"
-                      disabled={datasetAlreadyAdded(result.dataset)}
-                      on:click={() => addDataset(result.dataset)}
-                    >
-                      {datasetAlreadyAdded(result.dataset) ? 'Already on map' : 'Add to map'}
-                    </Button>
-                    <Button
-                      kind="ghost"
-                      size="small"
-                      on:click={() => openTimeline(result.dataset.id)}
-                    >
-                      View versions
-                    </Button>
-                  </div>
-                </div>
                 {/if}
               </div>
             </Tile>
