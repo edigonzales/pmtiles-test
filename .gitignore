@@ -1,3 +1,6 @@
+data
+.wms-cache
+
 node_modules
 
 # Output

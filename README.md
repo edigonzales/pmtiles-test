@@ -1,3 +1,10 @@
+# todo
+- featureinfo
+- featureinfo über Tile-Grenze
+- Styling
+- Styling über Tile-Grenze
+
+
 # PMTiles MapLibre starter
 
 A SvelteKit + Carbon Design System starter for exploring [PMTiles](https://github.com/protomaps/PMTiles) data in a [MapLibre GL JS](https://maplibre.org/) map. The project wires up a basemap selector (OpenStreetMap and a demo WMS layer) and leaves a placeholder for registering your own PMTiles sources and layers.

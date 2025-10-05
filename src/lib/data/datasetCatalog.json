@@ -90,7 +90,7 @@
       {
         "id": "2024-q2",
         "label": "Q2 2024 release",
-        "url": "https://data.so.ch/pmtiles/solar-potential/solar_potential_2024_q2.pmtiles",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
         "effectiveFrom": "2024-06-15",
         "summary": "Incorporates 2023 aerial survey updates and refined irradiation modelling.",
         "changes": [
@@ -101,7 +101,7 @@
       {
         "id": "2023-q4",
         "label": "Q4 2023 release",
-        "url": "https://data.so.ch/pmtiles/solar-potential/solar_potential_2023_q4.pmtiles",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
         "effectiveFrom": "2023-11-02",
         "summary": "Adds building refurbishments and enhanced shading model.",
         "changes": [
@@ -112,7 +112,7 @@
       {
         "id": "2023-q1",
         "label": "Q1 2023 release",
-        "url": "https://data.so.ch/pmtiles/solar-potential/solar_potential_2023_q1.pmtiles",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
         "effectiveFrom": "2023-02-10",
         "summary": "Baseline publication aligned with the energy strategy 2050.",
         "changes": [
@@ -193,7 +193,7 @@
       {
         "id": "2024-01",
         "label": "January 2024 (harmonised)",
-        "url": "https://data.so.ch/pmtiles/zoning/zoning_2024_01.pmtiles",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
         "effectiveFrom": "2024-01-20",
         "summary": "Includes Bettlach, Grenchen and Oensingen revisions ratified late 2023.",
         "changes": [
@@ -204,7 +204,7 @@
       {
         "id": "2023-05",
         "label": "May 2023 update",
-        "url": "https://data.so.ch/pmtiles/zoning/zoning_2023_05.pmtiles",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
         "effectiveFrom": "2023-05-11",
         "summary": "Incorporates legal changes up to April 2023.",
         "changes": [
@@ -323,7 +323,7 @@
       {
         "id": "2024-routing",
         "label": "Routing network 2024",
-        "url": "https://data.so.ch/pmtiles/cycling/cycling_network_2024.pmtiles",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
         "effectiveFrom": "2024-08-01",
         "summary": "Aligns with the 2024 cantonal mobility programme.",
         "changes": [
@@ -334,14 +334,14 @@
       {
         "id": "2023-routing",
         "label": "Routing network 2023",
-        "url": "https://data.so.ch/pmtiles/cycling/cycling_network_2023.pmtiles",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
         "effectiveFrom": "2023-07-05",
         "summary": "Baseline routing network published with performance indicators."
       },
       {
         "id": "2022-planning",
         "label": "Planning network 2022",
-        "url": "https://data.so.ch/pmtiles/cycling/cycling_network_2022.pmtiles",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
         "effectiveFrom": "2022-03-18",
         "summary": "Historic planning version used for long-term projects.",
         "effectiveTo": "2023-07-04"
