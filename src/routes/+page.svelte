@@ -59,9 +59,15 @@
 
   let timelineModalOpen = false;
   let timelineDatasetId: string | null = null;
+  let timelineInstanceId: string | null = null;
   let expandedResultState: Record<string, boolean> = {};
   let searchDebounce: ReturnType<typeof setTimeout> | null = null;
   let searchRequestId = 0;
+
+  const generateInstanceId = () =>
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `dataset-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
   const resetSearchState = (cancelOngoing = false) => {
     if (cancelOngoing) {
@@ -150,26 +156,22 @@
   const datasetAlreadyAdded = (dataset: DatasetMetadata) =>
     selectedDatasets.some((entry) => entry.dataset.id === dataset.id);
 
-  const handleStyleSelect = (datasetId: string) => (
+  const handleStyleSelect = (instanceId: string) => (
     event: CustomEvent<ComboBoxSelectDetail>
   ) => {
     const nextId =
       event.detail.selectedId ?? event.detail.selectedItem?.id ?? undefined;
     if (nextId) {
-      changeStyle(datasetId, nextId);
+      changeStyle(instanceId, nextId);
     }
   };
 
   const addDataset = (dataset: DatasetMetadata) => {
-    if (datasetAlreadyAdded(dataset)) {
-      timelineDatasetId = dataset.id;
-      timelineModalOpen = true;
-      return;
-    }
-
+    const instanceId = generateInstanceId();
     selectedDatasets = [
       ...selectedDatasets,
       {
+        instanceId,
         dataset,
         activeStyleId: dataset.defaultStyleId,
         activeVersionId: dataset.defaultVersionId
@@ -177,34 +179,45 @@
     ];
   };
 
-  const removeDataset = (datasetId: string) => {
-    selectedDatasets = selectedDatasets.filter((entry) => entry.dataset.id !== datasetId);
-    if (timelineDatasetId === datasetId) {
+  const removeDataset = (instanceId: string) => {
+    const removedEntry = selectedDatasets.find((entry) => entry.instanceId === instanceId);
+    selectedDatasets = selectedDatasets.filter((entry) => entry.instanceId !== instanceId);
+    if (timelineInstanceId === instanceId) {
+      timelineInstanceId = null;
+      timelineDatasetId = null;
+      timelineModalOpen = false;
+    } else if (
+      timelineDatasetId &&
+      removedEntry?.dataset.id === timelineDatasetId &&
+      !selectedDatasets.some((entry) => entry.dataset.id === timelineDatasetId)
+    ) {
       timelineDatasetId = null;
       timelineModalOpen = false;
     }
   };
 
-  const changeStyle = (datasetId: string, styleId: string) => {
+  const changeStyle = (instanceId: string, styleId: string) => {
     selectedDatasets = selectedDatasets.map((entry) =>
-      entry.dataset.id === datasetId ? { ...entry, activeStyleId: styleId } : entry
+      entry.instanceId === instanceId ? { ...entry, activeStyleId: styleId } : entry
     );
   };
 
-  const changeVersion = (datasetId: string, versionId: string) => {
+  const changeVersion = (instanceId: string, versionId: string) => {
     selectedDatasets = selectedDatasets.map((entry) =>
-      entry.dataset.id === datasetId ? { ...entry, activeVersionId: versionId } : entry
+      entry.instanceId === instanceId ? { ...entry, activeVersionId: versionId } : entry
     );
   };
 
-  const openTimeline = (datasetId: string) => {
+  const openTimeline = (datasetId: string, instanceId: string | null = null) => {
     timelineDatasetId = datasetId;
+    timelineInstanceId = instanceId;
     timelineModalOpen = true;
   };
 
   const closeTimeline = () => {
     timelineModalOpen = false;
     timelineDatasetId = null;
+    timelineInstanceId = null;
   };
 
   const getDatasetVersion = (dataset: DatasetMetadata, versionId: string) =>
@@ -249,7 +262,7 @@
 
     return [
       {
-        id: `${entry.dataset.id}-${style.id}`,
+        id: entry.instanceId,
         url: version.url,
         layerType: style.layerTypeOverride ?? entry.dataset.mapConfig.layerType,
         sourceType: entry.dataset.mapConfig.sourceType,
@@ -263,7 +276,9 @@
   });
 
   $: timelineSelection = timelineDatasetId
-    ? selectedDatasets.find((entry) => entry.dataset.id === timelineDatasetId) ?? null
+    ? timelineInstanceId
+      ? selectedDatasets.find((entry) => entry.instanceId === timelineInstanceId) ?? null
+      : selectedDatasets.find((entry) => entry.dataset.id === timelineDatasetId) ?? null
     : null;
 </script>
 
@@ -351,9 +366,8 @@
                   <button
                     type="button"
                     class="result-card__add"
-                    aria-label={alreadyAdded ? 'Already on map' : 'Add to map'}
-                    title={alreadyAdded ? 'Already on map' : 'Add to map'}
-                    disabled={alreadyAdded}
+                    aria-label={alreadyAdded ? 'Add another version to map' : 'Add to map'}
+                    title={alreadyAdded ? 'Add another version to map' : 'Add to map'}
                     on:click|stopPropagation={() => addDataset(result.dataset)}
                   >
                     <AddAlt
@@ -442,10 +456,9 @@
                       <Button
                         kind="primary"
                         size="small"
-                        disabled={datasetAlreadyAdded(result.dataset)}
                         on:click={() => addDataset(result.dataset)}
                       >
-                        {datasetAlreadyAdded(result.dataset) ? 'Already on map' : 'Add to map'}
+                        {alreadyAdded ? 'Add another version' : 'Add to map'}
                       </Button>
                       <Button
                         kind="ghost"
@@ -478,8 +491,8 @@
         <p class="empty-state">No datasets added yet. Use the search to add layers.</p>
       {:else}
         <div class="toc-list">
-          {#each selectedDatasets as entry (entry.dataset.id)}
-            {#key `${entry.dataset.id}-${entry.activeStyleId}-${entry.activeVersionId}`}
+          {#each selectedDatasets as entry (entry.instanceId)}
+            {#key `${entry.instanceId}-${entry.activeStyleId}-${entry.activeVersionId}`}
               <Tile class="toc-card">
                 <div class="toc-card__header">
                   <div>
@@ -490,7 +503,7 @@
                     kind="ghost"
                     size="small"
                     iconDescription="Remove dataset"
-                    on:click={() => removeDataset(entry.dataset.id)}
+                    on:click={() => removeDataset(entry.instanceId)}
                   >
                     Remove
                   </Button>
@@ -501,7 +514,7 @@
                 </div>
                 <div class="toc-card__controls">
                   <ComboBox
-                    id={`style-${entry.dataset.id}`}
+                    id={`style-${entry.instanceId}`}
                     class="style-combobox"
                     titleText="Style"
                     hideLabel
@@ -514,9 +527,13 @@
                     }))}
                     selectedId={entry.activeStyleId}
                     itemToString={(item) => (item ? item.text : '')}
-                    on:select={handleStyleSelect(entry.dataset.id)}
+                    on:select={handleStyleSelect(entry.instanceId)}
                   />
-                  <Button kind="tertiary" size="small" on:click={() => openTimeline(entry.dataset.id)}>
+                  <Button
+                    kind="tertiary"
+                    size="small"
+                    on:click={() => openTimeline(entry.dataset.id, entry.instanceId)}
+                  >
                     Version timeline
                   </Button>
                 </div>
@@ -553,7 +570,7 @@
           class:timeline-list__item--active={timelineSelection.activeVersionId === version.id}
           class="timeline-list__item"
           on:click={() => {
-            changeVersion(timelineSelection.dataset.id, version.id);
+            changeVersion(timelineSelection.instanceId, version.id);
             closeTimeline();
           }}
         >
