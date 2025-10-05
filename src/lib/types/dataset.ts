@@ -55,6 +55,7 @@ export interface DatasetSearchResult {
 }
 
 export interface SelectedDatasetState {
+  instanceId: string;
   dataset: DatasetMetadata;
   activeVersionId: string;
   activeStyleId: string;
