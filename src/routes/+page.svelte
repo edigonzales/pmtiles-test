@@ -18,6 +18,7 @@
     DatasetVersion
   } from '$lib/types/dataset';
   import { searchDatasets } from '$lib/services/datasetSearch';
+  import AddAlt from 'carbon-icons-svelte/lib/AddAlt.svelte';
 
   type BasemapOption = (typeof basemapOptions)[number];
   type BasemapComboBoxItem = BasemapOption & { text: string };
@@ -323,28 +324,46 @@
         <div class="results-list" aria-live="polite">
           {#each searchResults as result (result.dataset.id)}
             {@const expanded = !!expandedResultState[result.dataset.id]}
+            {@const alreadyAdded = datasetAlreadyAdded(result.dataset)}
             <Tile class="result-card">
               <div class="result-card__collapse" data-dataset-id={result.dataset.id}>
-                <button
-                  type="button"
-                  class="result-card__toggle"
-                  aria-expanded={expanded}
-                  aria-controls={`result-details-${result.dataset.id}`}
-                  on:click={() => toggleResultExpanded(result.dataset.id)}
-                >
-                  <span class="result-card__title" role="heading" aria-level="2">
-                    {result.dataset.title}
-                  </span>
-                  <svg
-                    class="result-card__chevron"
-                    class:result-card__chevron--expanded={expanded}
-                    aria-hidden="true"
-                    focusable="false"
-                    viewBox="0 0 16 16"
+                <div class="result-card__header">
+                  <button
+                    type="button"
+                    class="result-card__toggle"
+                    aria-expanded={expanded}
+                    aria-controls={`result-details-${result.dataset.id}`}
+                    on:click={() => toggleResultExpanded(result.dataset.id)}
                   >
-                    <path d="M13.41 5.59 12 4.17 8 8.17l-4-4-1.41 1.42L8 11l5.41-5.41Z" />
-                  </svg>
-                </button>
+                    <span class="result-card__title" role="heading" aria-level="2">
+                      {result.dataset.title}
+                    </span>
+                    <svg
+                      class="result-card__chevron"
+                      class:result-card__chevron--expanded={expanded}
+                      aria-hidden="true"
+                      focusable="false"
+                      viewBox="0 0 16 16"
+                    >
+                      <path d="M13.41 5.59 12 4.17 8 8.17l-4-4-1.41 1.42L8 11l5.41-5.41Z" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="result-card__add"
+                    aria-label={alreadyAdded ? 'Already on map' : 'Add to map'}
+                    title={alreadyAdded ? 'Already on map' : 'Add to map'}
+                    disabled={alreadyAdded}
+                    on:click|stopPropagation={() => addDataset(result.dataset)}
+                  >
+                    <AddAlt
+                      size={20}
+                      class="result-card__add-icon"
+                      aria-hidden="true"
+                      focusable="false"
+                    />
+                  </button>
+                </div>
 
                 {#if expanded}
                   {@const latestVersion = getLatestVersion(result.dataset)}
@@ -705,11 +724,18 @@
     margin: 0;
   }
 
+  .result-card__header {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
   .result-card__toggle {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    flex: 1;
     width: 100%;
     padding: 0;
     cursor: pointer;
@@ -729,6 +755,33 @@
   .result-card__toggle::marker,
   .result-card__toggle::-webkit-details-marker {
     display: none;
+  }
+
+  .result-card__add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--cds-interactive, #0f62fe);
+    cursor: pointer;
+  }
+
+  .result-card__add:hover:not(:disabled) {
+    background: rgba(15, 98, 254, 0.1);
+  }
+
+  .result-card__add:focus-visible {
+    outline: 2px solid var(--cds-focus, #0f62fe);
+    outline-offset: 2px;
+  }
+
+  .result-card__add:disabled {
+    color: var(--cds-text-disabled, #c6c6c6);
+    cursor: not-allowed;
   }
 
   .result-card__title {
