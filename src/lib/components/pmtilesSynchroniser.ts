@@ -104,7 +104,17 @@ export const syncPmtilesLayers = ({
       );
     }
 
+    let layerAdded = false;
+
     if (!map.getLayer(config.id)) {
+      if ((config.sourceType ?? 'vector') === 'vector' && !config.sourceLayer) {
+        debug(logger, 'MapView: skipping PMTiles layer until source layer available', {
+          layerId: config.id,
+          sourceType: config.sourceType,
+          layerType: config.layerType
+        });
+        continue;
+      }
       debug(logger, 'MapView: adding PMTiles layer', {
         layerId: config.id,
         sourceLayer: config.sourceLayer,
@@ -123,6 +133,7 @@ export const syncPmtilesLayers = ({
         } as any
       );
       attachedLayerIds.add(config.id);
+      layerAdded = true;
     } else {
       if (config.paint) {
         for (const [key, value] of Object.entries(config.paint)) {
@@ -136,6 +147,10 @@ export const syncPmtilesLayers = ({
       }
     }
 
-    layerStates.set(config.id, { sourceId, url: config.url });
+    if (layerAdded || map.getLayer(config.id)) {
+      layerStates.set(config.id, { sourceId, url: config.url });
+    } else {
+      layerStates.delete(config.id);
+    }
   }
 };

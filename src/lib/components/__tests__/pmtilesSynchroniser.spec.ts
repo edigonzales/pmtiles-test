@@ -72,6 +72,37 @@ describe('syncPmtilesLayers', () => {
     });
   });
 
+  test('waits to add vector layers until a source layer is provided', () => {
+    const map = createMockMap();
+    map.getLayer.mockReturnValue(undefined);
+    map.getSource.mockReturnValue(undefined);
+
+    const attachedLayerIds = new Set<string>();
+    const layerStates = new Map<string, { sourceId: string; url: string }>();
+
+    const prepareSource = vi.fn();
+
+    const vectorConfig = { ...layerConfig, sourceLayer: undefined };
+
+    syncPmtilesLayers({
+      map: map as unknown as MaplibreLike,
+      pmtilesLayers: [vectorConfig],
+      attachedLayerIds,
+      layerStates,
+      getSourceId: (layerId) => `${layerId}-source`,
+      prepareSource
+    });
+
+    expect(prepareSource).toHaveBeenCalledWith(vectorConfig);
+    expect(map.addSource).toHaveBeenCalledWith(
+      `${vectorConfig.id}-source`,
+      expect.objectContaining({ url: `pmtiles://${vectorConfig.url}` })
+    );
+    expect(map.addLayer).not.toHaveBeenCalled();
+    expect(attachedLayerIds.has(vectorConfig.id)).toBe(false);
+    expect(layerStates.has(vectorConfig.id)).toBe(false);
+  });
+
   test('removes layers and sources that are no longer present', () => {
     const map = createMockMap();
     const attachedLayerIds = new Set<string>([layerConfig.id]);
