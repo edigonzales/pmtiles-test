@@ -59,4 +59,5 @@ export interface SelectedDatasetState {
   dataset: DatasetMetadata;
   activeVersionId: string;
   activeStyleId: string;
+  visible: boolean;
 }
