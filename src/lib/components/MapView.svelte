@@ -216,6 +216,13 @@
           console.error('MapView: map error', event?.error ?? event);
         });
 
+        map.on('zoomend', () => {
+          const currentZoom = map?.getZoom();
+          if (typeof currentZoom === 'number') {
+            console.log('MapView: zoom level changed', { zoom: currentZoom });
+          }
+        });
+
         if (AttributionControlCtor) {
           map.addControl(new AttributionControlCtor({ compact: true }));
         }
