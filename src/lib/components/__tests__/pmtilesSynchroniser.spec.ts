@@ -13,6 +13,7 @@ type MockMap = {
   addLayer: MockFn;
   setPaintProperty: MockFn;
   setLayoutProperty: MockFn;
+  getStyle: MockFn;
 };
 
 const createMockMap = (): MockMap => ({
@@ -23,7 +24,8 @@ const createMockMap = (): MockMap => ({
   addSource: vi.fn(),
   addLayer: vi.fn(),
   setPaintProperty: vi.fn(),
-  setLayoutProperty: vi.fn()
+  setLayoutProperty: vi.fn(),
+  getStyle: vi.fn(() => ({ layers: [] }))
 });
 
 const layerConfig: PMTilesLayerConfig = {

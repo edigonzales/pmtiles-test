@@ -11,6 +11,7 @@ export type MaplibreLike = Pick<
   | 'addLayer'
   | 'setPaintProperty'
   | 'setLayoutProperty'
+  | 'getStyle'
 >;
 
 export interface LayerState {
@@ -25,12 +26,17 @@ export interface SyncContext {
   layerStates: Map<string, LayerState>;
   getSourceId: (layerId: string) => string;
   prepareSource?: (config: PMTilesLayerConfig) => void;
-  logger?: Pick<typeof console, 'debug'>;
+  logger?: Pick<typeof console, 'debug' | 'log'>;
 }
 
 const debug = (logger: SyncContext['logger'], message: string, payload: Record<string, unknown>) => {
   if (!logger?.debug) return;
   logger.debug(message, payload);
+};
+
+const info = (logger: SyncContext['logger'], message: string, payload: Record<string, unknown>) => {
+  if (!logger?.log) return;
+  logger.log(message, payload);
 };
 
 export const syncPmtilesLayers = ({
@@ -90,7 +96,7 @@ export const syncPmtilesLayers = ({
 
     if (!map.getSource(sourceId)) {
       prepareSource?.(config);
-      debug(logger, 'MapView: adding PMTiles source', {
+      info(logger, 'MapView: adding PMTiles source', {
         layerId: config.id,
         sourceId,
         url: config.url
@@ -115,7 +121,7 @@ export const syncPmtilesLayers = ({
         });
         continue;
       }
-      debug(logger, 'MapView: adding PMTiles layer', {
+      info(logger, 'MapView: adding PMTiles layer', {
         layerId: config.id,
         sourceLayer: config.sourceLayer,
         layerType: config.layerType
@@ -152,5 +158,18 @@ export const syncPmtilesLayers = ({
     } else {
       layerStates.delete(config.id);
     }
+  }
+
+  const style = map.getStyle?.();
+  if (style?.layers && Array.isArray(style.layers)) {
+    const layerSummaries = style.layers.map((layer: any, index: number) => ({
+      order: index,
+      id: layer?.id,
+      name: layer?.metadata?.name ?? null,
+      source: layer?.source ?? null,
+      sourceLayer: layer?.['source-layer'] ?? null,
+      visibility: layer?.layout?.visibility ?? 'visible'
+    }));
+    info(logger, 'MapView: current map layer order', layerSummaries);
   }
 };

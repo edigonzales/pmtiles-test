@@ -172,8 +172,9 @@
 
   const addDataset = (dataset: DatasetMetadata) => {
     const instanceId = generateInstanceId();
-    console.debug('TOC: add dataset to selection', {
+    console.log('TOC: add dataset to selection', {
       datasetId: dataset.id,
+      datasetTitle: dataset.title,
       instanceId,
       defaultStyleId: dataset.defaultStyleId,
       defaultVersionId: dataset.defaultVersionId
@@ -192,7 +193,7 @@
   };
 
   const removeDataset = (instanceId: string) => {
-    console.debug('TOC: remove dataset from selection', { instanceId });
+    console.log('TOC: remove dataset from selection', { instanceId });
     const removedEntry = selectedDatasets.find((entry) => entry.instanceId === instanceId);
     selectedDatasets = selectedDatasets.filter((entry) => entry.instanceId !== instanceId);
     const { [instanceId]: _removed, ...remainingExpanded } = expandedTocState;
@@ -224,7 +225,7 @@
   };
 
   const setDatasetVisibility = (instanceId: string, visible: boolean) => {
-    console.debug('TOC: set dataset visibility', { instanceId, visible });
+    console.log('TOC: set dataset visibility', { instanceId, visible });
     selectedDatasets = selectedDatasets.map((entry) =>
       entry.instanceId === instanceId ? { ...entry, visible } : entry
     );

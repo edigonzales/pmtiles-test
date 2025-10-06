@@ -54,7 +54,7 @@
         const sourceLayer = getDefaultVectorLayer(metadata as any);
         if (sourceLayer) {
           discoveredSourceLayers.set(config.url, sourceLayer);
-          console.debug('MapView: discovered PMTiles vector layer', {
+          console.log('MapView: discovered PMTiles vector layer', {
             layerId: config.id,
             url: config.url,
             sourceLayer
@@ -63,7 +63,7 @@
             scheduleSync();
           }
         } else {
-          console.debug('MapView: PMTiles metadata contained no vector layers', {
+          console.log('MapView: PMTiles metadata contained no vector layers', {
             layerId: config.id,
             url: config.url
           });
