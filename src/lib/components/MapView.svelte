@@ -6,6 +6,7 @@
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { basemapConfigs, type BasemapId } from '$lib/basemaps';
   import { syncPmtilesLayers, type LayerState } from './pmtilesSynchroniser';
+  import { getDefaultVectorLayer } from './pmtilesMetadata';
   import type { Map as MaplibreMap } from 'maplibre-gl';
   import type { PMTilesLayerConfig } from '$lib/types/pmtiles';
   import type { PMTiles } from 'pmtiles';
@@ -25,6 +26,8 @@
   let pmtilesProtocol: import('pmtiles').Protocol | null = null;
   let createPmtilesInstance: ((url: string) => PMTiles) | null = null;
   const registeredPmtiles = new Map<string, PMTiles>();
+  const discoveredSourceLayers = new Map<string, string>();
+  const pendingMetadataRequests = new Map<string, Promise<void>>();
   const attachedLayerIds = new Set<string>();
   const layerStates = new Map<string, LayerState>();
   let pendingSync = false;
@@ -36,31 +39,88 @@
 
   const getSourceId = (layerId: string) => `${layerId}-source`;
 
+  const ensureVectorSourceLayer = (config: PMTilesLayerConfig, instance: PMTiles) => {
+    if (config.sourceLayer || config.sourceType !== 'vector' || discoveredSourceLayers.has(config.url)) {
+      return;
+    }
+
+    if (pendingMetadataRequests.has(config.url)) {
+      return;
+    }
+
+    const request = instance
+      .getMetadata()
+      .then((metadata) => {
+        const sourceLayer = getDefaultVectorLayer(metadata as any);
+        if (sourceLayer) {
+          discoveredSourceLayers.set(config.url, sourceLayer);
+          console.debug('MapView: discovered PMTiles vector layer', {
+            layerId: config.id,
+            url: config.url,
+            sourceLayer
+          });
+          if (!disposed) {
+            scheduleSync();
+          }
+        } else {
+          console.debug('MapView: PMTiles metadata contained no vector layers', {
+            layerId: config.id,
+            url: config.url
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('MapView: failed to inspect PMTiles metadata', {
+          layerId: config.id,
+          url: config.url,
+          error
+        });
+      })
+      .finally(() => {
+        pendingMetadataRequests.delete(config.url);
+      });
+
+    pendingMetadataRequests.set(config.url, request);
+  };
+
   const preparePmtilesSource = (config: PMTilesLayerConfig) => {
     if (!pmtilesProtocol || !createPmtilesInstance) {
       return;
     }
 
-    if (registeredPmtiles.has(config.url)) {
-      return;
+    let instance = registeredPmtiles.get(config.url);
+    if (!instance) {
+      instance = createPmtilesInstance(config.url);
+      pmtilesProtocol.add(instance);
+      registeredPmtiles.set(config.url, instance);
+
+      console.debug('MapView: registered PMTiles archive', {
+        layerId: config.id,
+        url: config.url
+      });
     }
 
-    const instance = createPmtilesInstance(config.url);
-    pmtilesProtocol.add(instance);
-    registeredPmtiles.set(config.url, instance);
-
-    console.debug('MapView: registered PMTiles archive', {
-      layerId: config.id,
-      url: config.url
-    });
+    ensureVectorSourceLayer(config, instance);
   };
+
+  const resolvePmtilesLayers = () =>
+    pmtilesLayers.map((config) => {
+      if (config.sourceLayer || config.sourceType !== 'vector') {
+        return config;
+      }
+      const discovered = discoveredSourceLayers.get(config.url);
+      if (!discovered) {
+        return config;
+      }
+      return { ...config, sourceLayer: discovered };
+    });
 
   const scheduleSync = () => {
     if (!map) return;
     if (map.isStyleLoaded?.()) {
       syncPmtilesLayers({
         map,
-        pmtilesLayers,
+        pmtilesLayers: resolvePmtilesLayers(),
         attachedLayerIds,
         layerStates,
         getSourceId,
@@ -76,7 +136,7 @@
         pendingSync = false;
         syncPmtilesLayers({
           map: map!,
-          pmtilesLayers,
+          pmtilesLayers: resolvePmtilesLayers(),
           attachedLayerIds,
           layerStates,
           getSourceId,
@@ -179,6 +239,8 @@
         map = null;
       }
       registeredPmtiles.clear();
+      discoveredSourceLayers.clear();
+      pendingMetadataRequests.clear();
       createPmtilesInstance = null;
       if (protocolRegistered && unregisterProtocol && pmtilesProtocol) {
         unregisterProtocol('pmtiles');
