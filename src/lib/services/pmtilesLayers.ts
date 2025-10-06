@@ -8,11 +8,15 @@ const SIMPLE_FILL_PAINT: Record<string, unknown> = {
 };
 
 const clonePaint = (layerType: LayerType, style: DatasetStyleDefinition | undefined) => {
+  if (style?.paint) {
+    return { ...style.paint };
+  }
+
   if (layerType === 'fill') {
     return { ...SIMPLE_FILL_PAINT };
   }
 
-  return style?.paint ? { ...style.paint } : undefined;
+  return undefined;
 };
 
 const cloneLayout = (style: DatasetStyleDefinition | undefined) => {
