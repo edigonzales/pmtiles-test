@@ -181,7 +181,7 @@
         visible: true
       }
     ];
-    expandedTocState = { ...expandedTocState, [instanceId]: true };
+    expandedTocState = { ...expandedTocState, [instanceId]: false };
   };
 
   const removeDataset = (instanceId: string) => {
@@ -222,7 +222,7 @@
   };
 
   const toggleTocExpanded = (instanceId: string) => {
-    const nextExpanded = !(expandedTocState[instanceId] ?? true);
+    const nextExpanded = !(expandedTocState[instanceId] ?? false);
 
     expandedTocState = { ...expandedTocState, [instanceId]: nextExpanded };
   };
@@ -516,7 +516,7 @@
         <div class="toc-list">
           {#each selectedDatasets as entry (entry.instanceId)}
             {#key `${entry.instanceId}-${entry.activeStyleId}-${entry.activeVersionId}`}
-              {@const expanded = expandedTocState[entry.instanceId] ?? true}
+              {@const expanded = expandedTocState[entry.instanceId] ?? false}
               {@const detailsId = `toc-details-${entry.instanceId}`}
               {@const activeVersion = getDatasetVersion(entry.dataset, entry.activeVersionId)}
               <Tile class="toc-card">
@@ -537,7 +537,12 @@
                       on:click={() => toggleTocExpanded(entry.instanceId)}
                     >
                       <span class="toc-card__title-group" role="heading" aria-level="2">
-                        <span class="toc-card__title">{entry.dataset.title}</span>
+                        <span class="toc-card__title">
+                          {entry.dataset.title}
+                          {#if activeVersion && activeVersion.id !== entry.dataset.defaultVersionId}
+                            <span class="toc-card__title-version"> ({activeVersion.label})</span>
+                          {/if}
+                        </span>
                       </span>
                       <svg
                         class="toc-card__chevron"
@@ -1100,6 +1105,10 @@
     font-size: 1.05rem;
     font-weight: 600;
     color: var(--cds-text-primary, #161616);
+  }
+
+  .toc-card__title-version {
+    font-weight: 400;
   }
 
   .toc-card__chevron {
