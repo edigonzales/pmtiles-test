@@ -19,7 +19,7 @@
     "mapConfig": {
       "layerType": "fill",
       "sourceType": "vector",
-      "sourceLayer": "solar_potential",
+      "sourceLayer": "grundnutzung",
       "minzoom": 12,
       "maxzoom": 18
     },
@@ -140,7 +140,7 @@
     "mapConfig": {
       "layerType": "fill",
       "sourceType": "vector",
-      "sourceLayer": "zoning",
+      "sourceLayer": "grundnutzung",
       "minzoom": 10,
       "maxzoom": 18
     },
@@ -233,7 +233,7 @@
     "mapConfig": {
       "layerType": "line",
       "sourceType": "vector",
-      "sourceLayer": "cycling",
+      "sourceLayer": "grundnutzung",
       "minzoom": 8,
       "maxzoom": 18
     },

@@ -18,6 +18,7 @@
     SelectedDatasetState,
     DatasetVersion
   } from '$lib/types/dataset';
+  import { createLayerConfigForDataset } from '$lib/services/pmtilesLayers';
   import { searchDatasets } from '$lib/services/datasetSearch';
   import AddAlt from 'carbon-icons-svelte/lib/AddAlt.svelte';
   import TrashCan from 'carbon-icons-svelte/lib/TrashCan.svelte';
@@ -171,6 +172,13 @@
 
   const addDataset = (dataset: DatasetMetadata) => {
     const instanceId = generateInstanceId();
+    console.log('TOC: add dataset to selection', {
+      datasetId: dataset.id,
+      datasetTitle: dataset.title,
+      instanceId,
+      defaultStyleId: dataset.defaultStyleId,
+      defaultVersionId: dataset.defaultVersionId
+    });
     selectedDatasets = [
       ...selectedDatasets,
       {
@@ -185,6 +193,7 @@
   };
 
   const removeDataset = (instanceId: string) => {
+    console.log('TOC: remove dataset from selection', { instanceId });
     const removedEntry = selectedDatasets.find((entry) => entry.instanceId === instanceId);
     selectedDatasets = selectedDatasets.filter((entry) => entry.instanceId !== instanceId);
     const { [instanceId]: _removed, ...remainingExpanded } = expandedTocState;
@@ -216,6 +225,7 @@
   };
 
   const setDatasetVisibility = (instanceId: string, visible: boolean) => {
+    console.log('TOC: set dataset visibility', { instanceId, visible });
     selectedDatasets = selectedDatasets.map((entry) =>
       entry.instanceId === instanceId ? { ...entry, visible } : entry
     );
@@ -277,25 +287,8 @@
       return [];
     }
 
-    const style = entry.dataset.styles.find((item) => item.id === entry.activeStyleId);
-    const version = getDatasetVersion(entry.dataset, entry.activeVersionId);
-    if (!style || !version) {
-      return [];
-    }
-
-    return [
-      {
-        id: entry.instanceId,
-        url: version.url,
-        layerType: style.layerTypeOverride ?? entry.dataset.mapConfig.layerType,
-        sourceType: entry.dataset.mapConfig.sourceType,
-        sourceLayer: entry.dataset.mapConfig.sourceLayer,
-        paint: style.paint,
-        layout: style.layout,
-        minzoom: entry.dataset.mapConfig.minzoom,
-        maxzoom: entry.dataset.mapConfig.maxzoom
-      }
-    ];
+    const config = createLayerConfigForDataset(entry);
+    return config ? [config] : [];
   });
 
   $: timelineSelection = timelineDatasetId

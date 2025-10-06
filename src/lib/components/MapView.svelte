@@ -5,8 +5,11 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { basemapConfigs, type BasemapId } from '$lib/basemaps';
+  import { syncPmtilesLayers, type LayerState } from './pmtilesSynchroniser';
+  import { getDefaultVectorLayer } from './pmtilesMetadata';
   import type { Map as MaplibreMap } from 'maplibre-gl';
   import type { PMTilesLayerConfig } from '$lib/types/pmtiles';
+  import type { PMTiles } from 'pmtiles';
 
   export let basemap: BasemapId = 'swisstopo';
   export let center: [number, number] = [7.64, 47.3];
@@ -20,20 +23,110 @@
   let container: HTMLDivElement | null = null;
   let map: MaplibreMap | null = null;
   let currentBasemap: BasemapId | null = null;
-  let maplibreModule: typeof import('maplibre-gl') | null = null;
   let pmtilesProtocol: import('pmtiles').Protocol | null = null;
+  let createPmtilesInstance: ((url: string) => PMTiles) | null = null;
+  const registeredPmtiles = new Map<string, PMTiles>();
+  const discoveredSourceLayers = new Map<string, string>();
+  const pendingMetadataRequests = new Map<string, Promise<void>>();
   const attachedLayerIds = new Set<string>();
-  const layerStates = new Map<string, { sourceId: string; url: string }>();
+  const layerStates = new Map<string, LayerState>();
   let pendingSync = false;
   let disposed = false;
   let loadError: string | null = null;
+  let registerProtocol: ((name: string, handler: any) => void) | null = null;
+  let unregisterProtocol: ((name: string) => void) | null = null;
+  let protocolRegistered = false;
 
   const getSourceId = (layerId: string) => `${layerId}-source`;
+
+  const ensureVectorSourceLayer = (config: PMTilesLayerConfig, instance: PMTiles) => {
+    if (config.sourceLayer || config.sourceType !== 'vector' || discoveredSourceLayers.has(config.url)) {
+      return;
+    }
+
+    if (pendingMetadataRequests.has(config.url)) {
+      return;
+    }
+
+    const request = instance
+      .getMetadata()
+      .then((metadata) => {
+        const sourceLayer = getDefaultVectorLayer(metadata as any);
+        if (sourceLayer) {
+          discoveredSourceLayers.set(config.url, sourceLayer);
+          console.log('MapView: discovered PMTiles vector layer', {
+            layerId: config.id,
+            url: config.url,
+            sourceLayer
+          });
+          if (!disposed) {
+            scheduleSync();
+          }
+        } else {
+          console.log('MapView: PMTiles metadata contained no vector layers', {
+            layerId: config.id,
+            url: config.url
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('MapView: failed to inspect PMTiles metadata', {
+          layerId: config.id,
+          url: config.url,
+          error
+        });
+      })
+      .finally(() => {
+        pendingMetadataRequests.delete(config.url);
+      });
+
+    pendingMetadataRequests.set(config.url, request);
+  };
+
+  const preparePmtilesSource = (config: PMTilesLayerConfig) => {
+    if (!pmtilesProtocol || !createPmtilesInstance) {
+      return;
+    }
+
+    let instance = registeredPmtiles.get(config.url);
+    if (!instance) {
+      instance = createPmtilesInstance(config.url);
+      pmtilesProtocol.add(instance);
+      registeredPmtiles.set(config.url, instance);
+
+      console.debug('MapView: registered PMTiles archive', {
+        layerId: config.id,
+        url: config.url
+      });
+    }
+
+    ensureVectorSourceLayer(config, instance);
+  };
+
+  const resolvePmtilesLayers = () =>
+    pmtilesLayers.map((config) => {
+      if (config.sourceLayer || config.sourceType !== 'vector') {
+        return config;
+      }
+      const discovered = discoveredSourceLayers.get(config.url);
+      if (!discovered) {
+        return config;
+      }
+      return { ...config, sourceLayer: discovered };
+    });
 
   const scheduleSync = () => {
     if (!map) return;
     if (map.isStyleLoaded?.()) {
-      syncPmtilesLayers();
+      syncPmtilesLayers({
+        map,
+        pmtilesLayers: resolvePmtilesLayers(),
+        attachedLayerIds,
+        layerStates,
+        getSourceId,
+        prepareSource: preparePmtilesSource,
+        logger: console
+      });
       return;
     }
 
@@ -41,80 +134,16 @@
       pendingSync = true;
       map.once('load', () => {
         pendingSync = false;
-        syncPmtilesLayers();
+        syncPmtilesLayers({
+          map: map!,
+          pmtilesLayers: resolvePmtilesLayers(),
+          attachedLayerIds,
+          layerStates,
+          getSourceId,
+          prepareSource: preparePmtilesSource,
+          logger: console
+        });
       });
-    }
-  };
-
-  const syncPmtilesLayers = () => {
-    if (!map) return;
-
-    const desired = new Map(pmtilesLayers.map((config) => [config.id, config]));
-
-    for (const layerId of Array.from(attachedLayerIds)) {
-      if (!desired.has(layerId) || !map.getLayer(layerId)) {
-        if (map.getLayer(layerId)) {
-          map.removeLayer(layerId);
-        }
-        const sourceId = getSourceId(layerId);
-        if (map.getSource(sourceId)) {
-          map.removeSource(sourceId);
-        }
-        attachedLayerIds.delete(layerId);
-        layerStates.delete(layerId);
-      }
-    }
-
-    for (const config of pmtilesLayers) {
-      const sourceId = getSourceId(config.id);
-      const existingState = layerStates.get(config.id);
-      if (existingState && existingState.url !== config.url) {
-        if (map.getLayer(config.id)) {
-          map.removeLayer(config.id);
-        }
-        if (map.getSource(sourceId)) {
-          map.removeSource(sourceId);
-        }
-        attachedLayerIds.delete(config.id);
-        layerStates.delete(config.id);
-      }
-      if (!map.getSource(sourceId)) {
-        map.addSource(
-          sourceId,
-          {
-            type: config.sourceType ?? 'vector',
-            url: `pmtiles://${config.url}`
-          } as any
-        );
-      }
-
-      if (!map.getLayer(config.id)) {
-        map.addLayer(
-          {
-            id: config.id,
-            type: config.layerType,
-            source: sourceId,
-            ...(config.sourceLayer ? { 'source-layer': config.sourceLayer } : {}),
-            paint: config.paint ?? {},
-            layout: config.layout ?? {},
-            minzoom: config.minzoom,
-            maxzoom: config.maxzoom
-          } as any
-        );
-        attachedLayerIds.add(config.id);
-      } else {
-        if (config.paint) {
-          for (const [key, value] of Object.entries(config.paint)) {
-            map.setPaintProperty(config.id, key, value as never);
-          }
-        }
-        if (config.layout) {
-          for (const [key, value] of Object.entries(config.layout)) {
-            map.setLayoutProperty(config.id, key, value as never);
-          }
-        }
-      }
-      layerStates.set(config.id, { sourceId, url: config.url });
     }
   };
 
@@ -123,18 +152,57 @@
 
     (async () => {
       try {
-        const [{ default: maplibre }, { Protocol }] = await Promise.all([
+        const [maplibre, pmtilesModule] = await Promise.all([
           import('maplibre-gl'),
           import('pmtiles')
         ]);
 
+        const { Protocol, PMTiles } = pmtilesModule;
+
+        if (!Protocol || !PMTiles) {
+          throw new Error('PMTiles exports were not available.');
+        }
+
         if (disposed) return;
 
-        maplibreModule = maplibre;
-        pmtilesProtocol = new Protocol();
-        maplibre.addProtocol?.('pmtiles', pmtilesProtocol.tile.bind(pmtilesProtocol) as any);
+        const namespace = maplibre.default ?? maplibre;
+        const MapConstructor =
+          (namespace as { Map?: typeof MaplibreMap }).Map ??
+          (maplibre as { Map?: typeof MaplibreMap }).Map;
+        const AttributionControlCtor =
+          (namespace as { AttributionControl?: typeof import('maplibre-gl').AttributionControl })
+            .AttributionControl ??
+          (maplibre as { AttributionControl?: typeof import('maplibre-gl').AttributionControl })
+            .AttributionControl;
+        registerProtocol =
+          (maplibre as { addProtocol?: typeof import('maplibre-gl').addProtocol }).addProtocol ??
+          (namespace as { addProtocol?: typeof import('maplibre-gl').addProtocol }).addProtocol ??
+          null;
+        unregisterProtocol =
+          (maplibre as { removeProtocol?: typeof import('maplibre-gl').removeProtocol })
+            .removeProtocol ??
+          (namespace as { removeProtocol?: typeof import('maplibre-gl').removeProtocol })
+            .removeProtocol ??
+          null;
 
-        map = new maplibre.Map({
+        if (!MapConstructor) {
+          throw new Error('MapLibre Map constructor was not available.');
+        }
+
+        pmtilesProtocol = new Protocol();
+        createPmtilesInstance = (url: string) => new PMTiles(url);
+        const protocolHandler = pmtilesProtocol.tile.bind(pmtilesProtocol) as any;
+        if (registerProtocol) {
+          registerProtocol('pmtiles', protocolHandler);
+          protocolRegistered = true;
+        }
+        console.debug('MapView: registered PMTiles protocol', {
+          hasRegisterProtocol: !!registerProtocol,
+          protocolHandlerType: typeof protocolHandler,
+          protocolRegistered
+        });
+
+        map = new MapConstructor({
           container,
           style: basemapConfigs[basemap].style as any,
           center,
@@ -144,8 +212,12 @@
           attributionControl: false
         });
 
-        if (maplibre.AttributionControl) {
-          map.addControl(new maplibre.AttributionControl({ compact: true }));
+        map.on('error', (event) => {
+          console.error('MapView: map error', event?.error ?? event);
+        });
+
+        if (AttributionControlCtor) {
+          map.addControl(new AttributionControlCtor({ compact: true }));
         }
 
         currentBasemap = basemap;
@@ -166,9 +238,16 @@
         map.remove();
         map = null;
       }
-      if (maplibreModule && pmtilesProtocol) {
-        maplibreModule.removeProtocol?.('pmtiles');
+      registeredPmtiles.clear();
+      discoveredSourceLayers.clear();
+      pendingMetadataRequests.clear();
+      createPmtilesInstance = null;
+      if (protocolRegistered && unregisterProtocol && pmtilesProtocol) {
+        unregisterProtocol('pmtiles');
+        protocolRegistered = false;
+        console.debug('MapView: removed PMTiles protocol registration');
       }
+      pmtilesProtocol = null;
     };
   });
 
@@ -188,6 +267,10 @@
   }
 
   $: if (map) {
+    console.debug('MapView: scheduling PMTiles sync', {
+      basemap: currentBasemap,
+      layerCount: pmtilesLayers.length
+    });
     scheduleSync();
   }
 </script>
