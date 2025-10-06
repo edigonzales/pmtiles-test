@@ -793,13 +793,14 @@
   .results-list {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0;
   }
 
   :global(.result-card) {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    margin: 0;
   }
 
   .result-card__collapse {
@@ -1035,13 +1036,14 @@
   .toc-list {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0;
   }
 
   :global(.toc-card) {
     display: flex;
     flex-direction: column;
     gap: 0;
+    margin: 0;
   }
 
   .toc-card__collapse {
