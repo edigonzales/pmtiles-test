@@ -700,6 +700,7 @@
     box-shadow: 0 1.5rem 3.5rem rgba(22, 22, 22, 0.18);
     backdrop-filter: blur(10px);
     overflow-y: auto;
+    overflow-x: hidden;
     z-index: 2;
     transform: none;
   }
@@ -1079,6 +1080,7 @@
     cursor: pointer;
     color: inherit;
     width: 100%;
+    min-width: 0;
   }
 
   .toc-card__toggle:focus-visible {
@@ -1090,6 +1092,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.15rem;
+    min-width: 0;
   }
 
   .toc-card__title {
@@ -1102,6 +1105,8 @@
   .toc-card__chevron {
     width: 0.75rem;
     height: 0.75rem;
+    flex-shrink: 0;
+    display: block;
     fill: currentColor;
     transition: transform 0.2s ease;
   }
