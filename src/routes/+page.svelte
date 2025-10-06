@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     Button,
+    Checkbox,
     ComboBox,
     InlineLoading,
     Modal,
@@ -19,6 +20,7 @@
   } from '$lib/types/dataset';
   import { searchDatasets } from '$lib/services/datasetSearch';
   import AddAlt from 'carbon-icons-svelte/lib/AddAlt.svelte';
+  import TrashCan from 'carbon-icons-svelte/lib/TrashCan.svelte';
 
   type BasemapOption = (typeof basemapOptions)[number];
   type BasemapComboBoxItem = BasemapOption & { text: string };
@@ -61,6 +63,7 @@
   let timelineDatasetId: string | null = null;
   let timelineInstanceId: string | null = null;
   let expandedResultState: Record<string, boolean> = {};
+  let expandedTocState: Record<string, boolean> = {};
   let searchDebounce: ReturnType<typeof setTimeout> | null = null;
   let searchRequestId = 0;
 
@@ -174,14 +177,18 @@
         instanceId,
         dataset,
         activeStyleId: dataset.defaultStyleId,
-        activeVersionId: dataset.defaultVersionId
+        activeVersionId: dataset.defaultVersionId,
+        visible: true
       }
     ];
+    expandedTocState = { ...expandedTocState, [instanceId]: true };
   };
 
   const removeDataset = (instanceId: string) => {
     const removedEntry = selectedDatasets.find((entry) => entry.instanceId === instanceId);
     selectedDatasets = selectedDatasets.filter((entry) => entry.instanceId !== instanceId);
+    const { [instanceId]: _removed, ...remainingExpanded } = expandedTocState;
+    expandedTocState = remainingExpanded;
     if (timelineInstanceId === instanceId) {
       timelineInstanceId = null;
       timelineDatasetId = null;
@@ -206,6 +213,18 @@
     selectedDatasets = selectedDatasets.map((entry) =>
       entry.instanceId === instanceId ? { ...entry, activeVersionId: versionId } : entry
     );
+  };
+
+  const setDatasetVisibility = (instanceId: string, visible: boolean) => {
+    selectedDatasets = selectedDatasets.map((entry) =>
+      entry.instanceId === instanceId ? { ...entry, visible } : entry
+    );
+  };
+
+  const toggleTocExpanded = (instanceId: string) => {
+    const nextExpanded = !(expandedTocState[instanceId] ?? true);
+
+    expandedTocState = { ...expandedTocState, [instanceId]: nextExpanded };
   };
 
   const openTimeline = (datasetId: string, instanceId: string | null = null) => {
@@ -254,6 +273,10 @@
   $: selectedBasemap = selectedItem.id as BasemapId;
 
   $: pmtilesLayers = selectedDatasets.flatMap((entry) => {
+    if (!entry.visible) {
+      return [];
+    }
+
     const style = entry.dataset.styles.find((item) => item.id === entry.activeStyleId);
     const version = getDatasetVersion(entry.dataset, entry.activeVersionId);
     if (!style || !version) {
@@ -493,57 +516,96 @@
         <div class="toc-list">
           {#each selectedDatasets as entry (entry.instanceId)}
             {#key `${entry.instanceId}-${entry.activeStyleId}-${entry.activeVersionId}`}
+              {@const expanded = expandedTocState[entry.instanceId] ?? true}
+              {@const detailsId = `toc-details-${entry.instanceId}`}
+              {@const activeVersion = getDatasetVersion(entry.dataset, entry.activeVersionId)}
               <Tile class="toc-card">
-                <div class="toc-card__header">
-                  <div>
-                    <h3>{entry.dataset.title}</h3>
-                    <p>{entry.dataset.summary}</p>
+                <div class="toc-card__collapse" data-instance-id={entry.instanceId}>
+                  <div class="toc-card__header">
+                    <Checkbox
+                      class="toc-card__visibility"
+                      checked={entry.visible}
+                      hideLabel
+                      labelText={`Toggle ${entry.dataset.title} visibility`}
+                      on:check={(event) => setDatasetVisibility(entry.instanceId, event.detail)}
+                    />
+                    <button
+                      type="button"
+                      class="toc-card__toggle"
+                      aria-expanded={expanded}
+                      aria-controls={detailsId}
+                      on:click={() => toggleTocExpanded(entry.instanceId)}
+                    >
+                      <span class="toc-card__title-group" role="heading" aria-level="2">
+                        <span class="toc-card__title">{entry.dataset.title}</span>
+                      </span>
+                      <svg
+                        class="toc-card__chevron"
+                        class:toc-card__chevron--expanded={expanded}
+                        aria-hidden="true"
+                        focusable="false"
+                        viewBox="0 0 16 16"
+                      >
+                        <path d="M13.41 5.59 12 4.17 8 8.17l-4-4-1.41 1.42L8 11l5.41-5.41Z" />
+                      </svg>
+                    </button>
+                    <Button
+                      class="toc-card__remove"
+                      kind="ghost"
+                      size="small"
+                      iconDescription="Remove dataset"
+                      on:click={(event) => {
+                        event.stopPropagation();
+                        removeDataset(entry.instanceId);
+                      }}
+                    >
+                      <svelte:fragment slot="icon">
+                        <TrashCan size={20} aria-hidden="true" focusable="false" />
+                      </svelte:fragment>
+                    </Button>
                   </div>
-                  <Button
-                    kind="ghost"
-                    size="small"
-                    iconDescription="Remove dataset"
-                    on:click={() => removeDataset(entry.instanceId)}
-                  >
-                    Remove
-                  </Button>
+
+                  {#if expanded}
+                    <div class="toc-card__details" id={detailsId}>
+                      <p class="toc-card__summary">{entry.dataset.summary}</p>
+                      <div class="toc-card__tags">
+                        <Tag type="cool-gray" size="sm">{entry.dataset.theme}</Tag>
+                        <Tag type="purple" size="sm">{entry.dataset.geometryType}</Tag>
+                      </div>
+                      <div class="toc-card__controls">
+                        <ComboBox
+                          id={`style-${entry.instanceId}`}
+                          class="style-combobox"
+                          titleText="Style"
+                          hideLabel
+                          helperText={
+                            entry.dataset.styles.find((style) => style.id === entry.activeStyleId)?.description
+                          }
+                          items={entry.dataset.styles.map((style) => ({
+                            id: style.id,
+                            text: style.label
+                          }))}
+                          selectedId={entry.activeStyleId}
+                          itemToString={(item) => (item ? item.text : '')}
+                          on:select={handleStyleSelect(entry.instanceId)}
+                        />
+                        <Button
+                          kind="tertiary"
+                          size="small"
+                          on:click={() => openTimeline(entry.dataset.id, entry.instanceId)}
+                        >
+                          Version timeline
+                        </Button>
+                      </div>
+                      {#if activeVersion}
+                        <div class="toc-card__version">
+                          <span class="toc-card__version-label">{activeVersion.label}</span>
+                          <span class="toc-card__version-range">{formatVersionRange(activeVersion)}</span>
+                        </div>
+                      {/if}
+                    </div>
+                  {/if}
                 </div>
-                <div class="toc-card__tags">
-                  <Tag type="cool-gray" size="sm">{entry.dataset.theme}</Tag>
-                  <Tag type="purple" size="sm">{entry.dataset.geometryType}</Tag>
-                </div>
-                <div class="toc-card__controls">
-                  <ComboBox
-                    id={`style-${entry.instanceId}`}
-                    class="style-combobox"
-                    titleText="Style"
-                    hideLabel
-                    helperText={
-                      entry.dataset.styles.find((style) => style.id === entry.activeStyleId)?.description
-                    }
-                    items={entry.dataset.styles.map((style) => ({
-                      id: style.id,
-                      text: style.label
-                    }))}
-                    selectedId={entry.activeStyleId}
-                    itemToString={(item) => (item ? item.text : '')}
-                    on:select={handleStyleSelect(entry.instanceId)}
-                  />
-                  <Button
-                    kind="tertiary"
-                    size="small"
-                    on:click={() => openTimeline(entry.dataset.id, entry.instanceId)}
-                  >
-                    Version timeline
-                  </Button>
-                </div>
-                {@const activeVersion = getDatasetVersion(entry.dataset, entry.activeVersionId)}
-                {#if activeVersion}
-                  <div class="toc-card__version">
-                    <span class="toc-card__version-label">{activeVersion.label}</span>
-                    <span class="toc-card__version-range">{formatVersionRange(activeVersion)}</span>
-                  </div>
-                {/if}
               </Tile>
             {/key}
           {/each}
@@ -973,21 +1035,88 @@
   :global(.toc-card) {
     display: flex;
     flex-direction: column;
+    gap: 0;
+  }
+
+  .toc-card__collapse {
+    display: flex;
+    flex-direction: column;
     gap: 0.75rem;
   }
 
   .toc-card__header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  :global(.toc-card__visibility) {
+    margin: 0;
+    width: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .toc-card__header :global(.bx--checkbox-wrapper) {
+    width: auto;
+  }
+
+  .toc-card__header :global(.bx--form-item) {
+    margin-bottom: 0;
+  }
+
+  .toc-card__toggle {
     display: flex;
+    align-items: center;
     justify-content: space-between;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    padding: 0.25rem 0;
+    text-align: left;
+    cursor: pointer;
+    color: inherit;
+    width: 100%;
+  }
+
+  .toc-card__toggle:focus-visible {
+    outline: 2px solid var(--cds-focus, #0f62fe);
+    outline-offset: 2px;
+  }
+
+  .toc-card__title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .toc-card__title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--cds-text-primary, #161616);
+  }
+
+  .toc-card__chevron {
+    width: 0.75rem;
+    height: 0.75rem;
+    fill: currentColor;
+    transition: transform 0.2s ease;
+  }
+
+  .toc-card__chevron--expanded {
+    transform: rotate(180deg);
+  }
+
+  .toc-card__details {
+    display: flex;
+    flex-direction: column;
     gap: 0.75rem;
   }
 
-  .toc-card__header h3 {
-    margin: 0 0 0.3rem;
-    font-size: 1.05rem;
-  }
-
-  .toc-card__header p {
+  .toc-card__summary {
     margin: 0;
     color: var(--cds-text-secondary, #525252);
   }
