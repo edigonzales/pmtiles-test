@@ -3,6 +3,7 @@
 - featureinfo über Tile-Grenze
 - Styling
 - Styling über Tile-Grenze
+- geokatalog (tree)
 
 
 # PMTiles MapLibre starter
