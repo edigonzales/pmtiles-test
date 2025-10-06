@@ -21,13 +21,15 @@
   let container: HTMLDivElement | null = null;
   let map: MaplibreMap | null = null;
   let currentBasemap: BasemapId | null = null;
-  let maplibreModule: typeof import('maplibre-gl') | null = null;
   let pmtilesProtocol: import('pmtiles').Protocol | null = null;
   const attachedLayerIds = new Set<string>();
   const layerStates = new Map<string, LayerState>();
   let pendingSync = false;
   let disposed = false;
   let loadError: string | null = null;
+  let registerProtocol: ((name: string, handler: any) => void) | null = null;
+  let unregisterProtocol: ((name: string) => void) | null = null;
+  let protocolRegistered = false;
 
   const getSourceId = (layerId: string) => `${layerId}-source`;
 
@@ -66,18 +68,50 @@
 
     (async () => {
       try {
-        const [{ default: maplibre }, { Protocol }] = await Promise.all([
+        const [maplibre, { Protocol }] = await Promise.all([
           import('maplibre-gl'),
           import('pmtiles')
         ]);
 
         if (disposed) return;
 
-        maplibreModule = maplibre;
-        pmtilesProtocol = new Protocol();
-        maplibre.addProtocol?.('pmtiles', pmtilesProtocol.tile.bind(pmtilesProtocol) as any);
+        const namespace = maplibre.default ?? maplibre;
+        const MapConstructor =
+          (namespace as { Map?: typeof MaplibreMap }).Map ??
+          (maplibre as { Map?: typeof MaplibreMap }).Map;
+        const AttributionControlCtor =
+          (namespace as { AttributionControl?: typeof import('maplibre-gl').AttributionControl })
+            .AttributionControl ??
+          (maplibre as { AttributionControl?: typeof import('maplibre-gl').AttributionControl })
+            .AttributionControl;
+        registerProtocol =
+          (maplibre as { addProtocol?: typeof import('maplibre-gl').addProtocol }).addProtocol ??
+          (namespace as { addProtocol?: typeof import('maplibre-gl').addProtocol }).addProtocol ??
+          null;
+        unregisterProtocol =
+          (maplibre as { removeProtocol?: typeof import('maplibre-gl').removeProtocol })
+            .removeProtocol ??
+          (namespace as { removeProtocol?: typeof import('maplibre-gl').removeProtocol })
+            .removeProtocol ??
+          null;
 
-        map = new maplibre.Map({
+        if (!MapConstructor) {
+          throw new Error('MapLibre Map constructor was not available.');
+        }
+
+        pmtilesProtocol = new Protocol();
+        const protocolHandler = pmtilesProtocol.tile.bind(pmtilesProtocol) as any;
+        if (registerProtocol) {
+          registerProtocol('pmtiles', protocolHandler);
+          protocolRegistered = true;
+        }
+        console.debug('MapView: registered PMTiles protocol', {
+          hasRegisterProtocol: !!registerProtocol,
+          protocolHandlerType: typeof protocolHandler,
+          protocolRegistered
+        });
+
+        map = new MapConstructor({
           container,
           style: basemapConfigs[basemap].style as any,
           center,
@@ -87,8 +121,8 @@
           attributionControl: false
         });
 
-        if (maplibre.AttributionControl) {
-          map.addControl(new maplibre.AttributionControl({ compact: true }));
+        if (AttributionControlCtor) {
+          map.addControl(new AttributionControlCtor({ compact: true }));
         }
 
         currentBasemap = basemap;
@@ -109,8 +143,10 @@
         map.remove();
         map = null;
       }
-      if (maplibreModule && pmtilesProtocol) {
-        maplibreModule.removeProtocol?.('pmtiles');
+      if (protocolRegistered && unregisterProtocol && pmtilesProtocol) {
+        unregisterProtocol('pmtiles');
+        protocolRegistered = false;
+        console.debug('MapView: removed PMTiles protocol registration');
       }
     };
   });
