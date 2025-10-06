@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import type { DatasetMetadata } from '$lib/types/dataset';
 import { searchCatalog } from '$lib/services/datasetSearch.shared';
 
-const catalogFileUrl = new URL('../../../lib/data/datasetCatalog.json', import.meta.url);
+const catalogFileUrl = new URL('../../../lib/data/datasetCollection.json', import.meta.url);
 
 let cachedCatalog: DatasetMetadata[] | null = null;
 let inflightCatalog: Promise<DatasetMetadata[]> | null = null;

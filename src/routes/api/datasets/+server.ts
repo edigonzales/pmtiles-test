@@ -1,4 +1,4 @@
 import { json } from '@sveltejs/kit';
-import { datasetCatalog } from '$lib/data/datasetCatalog.server';
+import { datasetCollection } from '$lib/data/datasetCollection.server';
 
-export const GET = () => json(datasetCatalog);
+export const GET = () => json(datasetCollection);
