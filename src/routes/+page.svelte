@@ -801,6 +801,7 @@
     flex-direction: column;
     gap: 0.75rem;
     margin: 0;
+    padding: 0.5rem;
   }
 
   .result-card__collapse {
@@ -1044,6 +1045,7 @@
     flex-direction: column;
     gap: 0;
     margin: 0;
+    padding: 0.5rem;
   }
 
   .toc-card__collapse {
