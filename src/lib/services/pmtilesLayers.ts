@@ -124,11 +124,14 @@ export const createLayerConfigForDataset = (
   const paint = applyColorToPaint(style?.paint, layerType, color);
   const layout = cloneLayout(style?.layout);
 
+  const sourceType =
+    entry.dataset.mapConfig.sourceType ?? (layerType === 'raster' || layerType === 'hillshade' ? 'raster' : 'vector');
+
   return {
     id: entry.instanceId,
     url: version.url,
     layerType,
-    sourceType: entry.dataset.mapConfig.sourceType,
+    sourceType,
     sourceLayer: entry.dataset.mapConfig.sourceLayer,
     paint,
     layout,

@@ -24,6 +24,7 @@ export interface SyncContext {
   attachedLayerIds: Set<string>;
   layerStates: Map<string, LayerState>;
   getSourceId: (layerId: string) => string;
+  prepareSource?: (config: PMTilesLayerConfig) => void;
   logger?: Pick<typeof console, 'debug'>;
 }
 
@@ -38,7 +39,8 @@ export const syncPmtilesLayers = ({
   attachedLayerIds,
   layerStates,
   getSourceId,
-  logger
+  logger,
+  prepareSource
 }: SyncContext) => {
   debug(logger, 'MapView: syncing PMTiles layers', {
     layerCount: pmtilesLayers.length,
@@ -87,6 +89,7 @@ export const syncPmtilesLayers = ({
     }
 
     if (!map.getSource(sourceId)) {
+      prepareSource?.(config);
       debug(logger, 'MapView: adding PMTiles source', {
         layerId: config.id,
         sourceId,

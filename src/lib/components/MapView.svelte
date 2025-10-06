@@ -8,6 +8,7 @@
   import { syncPmtilesLayers, type LayerState } from './pmtilesSynchroniser';
   import type { Map as MaplibreMap } from 'maplibre-gl';
   import type { PMTilesLayerConfig } from '$lib/types/pmtiles';
+  import type { PMTiles } from 'pmtiles';
 
   export let basemap: BasemapId = 'swisstopo';
   export let center: [number, number] = [7.64, 47.3];
@@ -22,6 +23,8 @@
   let map: MaplibreMap | null = null;
   let currentBasemap: BasemapId | null = null;
   let pmtilesProtocol: import('pmtiles').Protocol | null = null;
+  let createPmtilesInstance: ((url: string) => PMTiles) | null = null;
+  const registeredPmtiles = new Map<string, PMTiles>();
   const attachedLayerIds = new Set<string>();
   const layerStates = new Map<string, LayerState>();
   let pendingSync = false;
@@ -33,6 +36,25 @@
 
   const getSourceId = (layerId: string) => `${layerId}-source`;
 
+  const preparePmtilesSource = (config: PMTilesLayerConfig) => {
+    if (!pmtilesProtocol || !createPmtilesInstance) {
+      return;
+    }
+
+    if (registeredPmtiles.has(config.url)) {
+      return;
+    }
+
+    const instance = createPmtilesInstance(config.url);
+    pmtilesProtocol.add(instance);
+    registeredPmtiles.set(config.url, instance);
+
+    console.debug('MapView: registered PMTiles archive', {
+      layerId: config.id,
+      url: config.url
+    });
+  };
+
   const scheduleSync = () => {
     if (!map) return;
     if (map.isStyleLoaded?.()) {
@@ -42,6 +64,7 @@
         attachedLayerIds,
         layerStates,
         getSourceId,
+        prepareSource: preparePmtilesSource,
         logger: console
       });
       return;
@@ -57,6 +80,7 @@
           attachedLayerIds,
           layerStates,
           getSourceId,
+          prepareSource: preparePmtilesSource,
           logger: console
         });
       });
@@ -68,10 +92,16 @@
 
     (async () => {
       try {
-        const [maplibre, { Protocol }] = await Promise.all([
+        const [maplibre, pmtilesModule] = await Promise.all([
           import('maplibre-gl'),
           import('pmtiles')
         ]);
+
+        const { Protocol, PMTiles } = pmtilesModule;
+
+        if (!Protocol || !PMTiles) {
+          throw new Error('PMTiles exports were not available.');
+        }
 
         if (disposed) return;
 
@@ -100,6 +130,7 @@
         }
 
         pmtilesProtocol = new Protocol();
+        createPmtilesInstance = (url: string) => new PMTiles(url);
         const protocolHandler = pmtilesProtocol.tile.bind(pmtilesProtocol) as any;
         if (registerProtocol) {
           registerProtocol('pmtiles', protocolHandler);
@@ -119,6 +150,10 @@
           pitch,
           bearing,
           attributionControl: false
+        });
+
+        map.on('error', (event) => {
+          console.error('MapView: map error', event?.error ?? event);
         });
 
         if (AttributionControlCtor) {
@@ -143,11 +178,14 @@
         map.remove();
         map = null;
       }
+      registeredPmtiles.clear();
+      createPmtilesInstance = null;
       if (protocolRegistered && unregisterProtocol && pmtilesProtocol) {
         unregisterProtocol('pmtiles');
         protocolRegistered = false;
         console.debug('MapView: removed PMTiles protocol registration');
       }
+      pmtilesProtocol = null;
     };
   });
 

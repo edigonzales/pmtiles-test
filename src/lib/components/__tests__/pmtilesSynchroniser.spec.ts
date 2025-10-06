@@ -42,14 +42,18 @@ describe('syncPmtilesLayers', () => {
     const attachedLayerIds = new Set<string>();
     const layerStates = new Map<string, { sourceId: string; url: string }>();
 
+    const prepareSource = vi.fn();
+
     syncPmtilesLayers({
       map: map as unknown as MaplibreLike,
       pmtilesLayers: [layerConfig],
       attachedLayerIds,
       layerStates,
-      getSourceId: (layerId) => `${layerId}-source`
+      getSourceId: (layerId) => `${layerId}-source`,
+      prepareSource
     });
 
+    expect(prepareSource).toHaveBeenCalledWith(layerConfig);
     expect(map.addSource).toHaveBeenCalledWith(
       `${layerConfig.id}-source`,
       expect.objectContaining({ url: `pmtiles://${layerConfig.url}` })
@@ -82,14 +86,18 @@ describe('syncPmtilesLayers', () => {
       .mockImplementationOnce(() => ({ id: `${layerConfig.id}-source` }))
       .mockReturnValue(undefined);
 
+    const prepareSource = vi.fn();
+
     syncPmtilesLayers({
       map: map as unknown as MaplibreLike,
       pmtilesLayers: [],
       attachedLayerIds,
       layerStates,
-      getSourceId: (layerId) => `${layerId}-source`
+      getSourceId: (layerId) => `${layerId}-source`,
+      prepareSource
     });
 
+    expect(prepareSource).not.toHaveBeenCalled();
     expect(map.removeLayer).toHaveBeenCalledWith(layerConfig.id);
     expect(map.removeSource).toHaveBeenCalledWith(`${layerConfig.id}-source`);
     expect(attachedLayerIds.has(layerConfig.id)).toBe(false);
@@ -109,14 +117,18 @@ describe('syncPmtilesLayers', () => {
       .mockImplementationOnce(() => ({ id: `${layerConfig.id}-source` }))
       .mockReturnValue(undefined);
 
+    const prepareSource = vi.fn();
+
     syncPmtilesLayers({
       map: map as unknown as MaplibreLike,
       pmtilesLayers: [layerConfig],
       attachedLayerIds,
       layerStates,
-      getSourceId: (layerId) => `${layerId}-source`
+      getSourceId: (layerId) => `${layerId}-source`,
+      prepareSource
     });
 
+    expect(prepareSource).toHaveBeenCalledWith(layerConfig);
     expect(map.removeLayer).toHaveBeenCalledWith(layerConfig.id);
     expect(map.removeSource).toHaveBeenCalledWith(`${layerConfig.id}-source`);
     expect(map.addSource).toHaveBeenCalledWith(
@@ -134,14 +146,18 @@ describe('syncPmtilesLayers', () => {
     map.getLayer.mockReturnValue({ id: layerConfig.id });
     map.getSource.mockReturnValue({ id: `${layerConfig.id}-source` });
 
+    const prepareSource = vi.fn();
+
     syncPmtilesLayers({
       map: map as unknown as MaplibreLike,
       pmtilesLayers: [layerConfig],
       attachedLayerIds,
       layerStates,
-      getSourceId: (layerId) => `${layerId}-source`
+      getSourceId: (layerId) => `${layerId}-source`,
+      prepareSource
     });
 
+    expect(prepareSource).not.toHaveBeenCalled();
     expect(map.setPaintProperty).toHaveBeenCalledWith(
       layerConfig.id,
       'fill-color',

@@ -84,6 +84,7 @@ describe('pmtilesLayers service', () => {
     expect(config?.id).toBe(entry.instanceId);
     expect(config?.url).toBe('https://example.com/data.pmtiles');
     expect(config?.layerType).toBe('line');
+    expect(config?.sourceType).toBe('vector');
     expect(config?.paint?.['line-color']).toBe(color);
     expect(config?.layout).toEqual({ visibility: 'visible' });
   });
@@ -94,5 +95,23 @@ describe('pmtilesLayers service', () => {
 
     const config = createLayerConfigForDataset(entry);
     expect(config).toBeNull();
+  });
+
+  it('defaults the source type to raster when none is provided for raster layers', () => {
+    const entry = createSelectedDataset('raster');
+    entry.dataset.mapConfig.sourceType = undefined;
+
+    const config = createLayerConfigForDataset(entry);
+
+    expect(config?.sourceType).toBe('raster');
+  });
+
+  it('defaults the source type to raster when none is provided for hillshade layers', () => {
+    const entry = createSelectedDataset('hillshade');
+    entry.dataset.mapConfig.sourceType = undefined;
+
+    const config = createLayerConfigForDataset(entry);
+
+    expect(config?.sourceType).toBe('raster');
   });
 });
