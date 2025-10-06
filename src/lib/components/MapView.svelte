@@ -5,6 +5,7 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { basemapConfigs, type BasemapId } from '$lib/basemaps';
+  import { syncPmtilesLayers, type LayerState } from './pmtilesSynchroniser';
   import type { Map as MaplibreMap } from 'maplibre-gl';
   import type { PMTilesLayerConfig } from '$lib/types/pmtiles';
 
@@ -23,7 +24,7 @@
   let maplibreModule: typeof import('maplibre-gl') | null = null;
   let pmtilesProtocol: import('pmtiles').Protocol | null = null;
   const attachedLayerIds = new Set<string>();
-  const layerStates = new Map<string, { sourceId: string; url: string }>();
+  const layerStates = new Map<string, LayerState>();
   let pendingSync = false;
   let disposed = false;
   let loadError: string | null = null;
@@ -33,7 +34,14 @@
   const scheduleSync = () => {
     if (!map) return;
     if (map.isStyleLoaded?.()) {
-      syncPmtilesLayers();
+      syncPmtilesLayers({
+        map,
+        pmtilesLayers,
+        attachedLayerIds,
+        layerStates,
+        getSourceId,
+        logger: console
+      });
       return;
     }
 
@@ -41,80 +49,15 @@
       pendingSync = true;
       map.once('load', () => {
         pendingSync = false;
-        syncPmtilesLayers();
+        syncPmtilesLayers({
+          map: map!,
+          pmtilesLayers,
+          attachedLayerIds,
+          layerStates,
+          getSourceId,
+          logger: console
+        });
       });
-    }
-  };
-
-  const syncPmtilesLayers = () => {
-    if (!map) return;
-
-    const desired = new Map(pmtilesLayers.map((config) => [config.id, config]));
-
-    for (const layerId of Array.from(attachedLayerIds)) {
-      if (!desired.has(layerId) || !map.getLayer(layerId)) {
-        if (map.getLayer(layerId)) {
-          map.removeLayer(layerId);
-        }
-        const sourceId = getSourceId(layerId);
-        if (map.getSource(sourceId)) {
-          map.removeSource(sourceId);
-        }
-        attachedLayerIds.delete(layerId);
-        layerStates.delete(layerId);
-      }
-    }
-
-    for (const config of pmtilesLayers) {
-      const sourceId = getSourceId(config.id);
-      const existingState = layerStates.get(config.id);
-      if (existingState && existingState.url !== config.url) {
-        if (map.getLayer(config.id)) {
-          map.removeLayer(config.id);
-        }
-        if (map.getSource(sourceId)) {
-          map.removeSource(sourceId);
-        }
-        attachedLayerIds.delete(config.id);
-        layerStates.delete(config.id);
-      }
-      if (!map.getSource(sourceId)) {
-        map.addSource(
-          sourceId,
-          {
-            type: config.sourceType ?? 'vector',
-            url: `pmtiles://${config.url}`
-          } as any
-        );
-      }
-
-      if (!map.getLayer(config.id)) {
-        map.addLayer(
-          {
-            id: config.id,
-            type: config.layerType,
-            source: sourceId,
-            ...(config.sourceLayer ? { 'source-layer': config.sourceLayer } : {}),
-            paint: config.paint ?? {},
-            layout: config.layout ?? {},
-            minzoom: config.minzoom,
-            maxzoom: config.maxzoom
-          } as any
-        );
-        attachedLayerIds.add(config.id);
-      } else {
-        if (config.paint) {
-          for (const [key, value] of Object.entries(config.paint)) {
-            map.setPaintProperty(config.id, key, value as never);
-          }
-        }
-        if (config.layout) {
-          for (const [key, value] of Object.entries(config.layout)) {
-            map.setLayoutProperty(config.id, key, value as never);
-          }
-        }
-      }
-      layerStates.set(config.id, { sourceId, url: config.url });
     }
   };
 
@@ -188,6 +131,10 @@
   }
 
   $: if (map) {
+    console.debug('MapView: scheduling PMTiles sync', {
+      basemap: currentBasemap,
+      layerCount: pmtilesLayers.length
+    });
     scheduleSync();
   }
 </script>
