@@ -18,6 +18,7 @@
     SelectedDatasetState,
     DatasetVersion
   } from '$lib/types/dataset';
+  import { createLayerConfigForDataset } from '$lib/services/pmtilesLayers';
   import { searchDatasets } from '$lib/services/datasetSearch';
   import AddAlt from 'carbon-icons-svelte/lib/AddAlt.svelte';
   import TrashCan from 'carbon-icons-svelte/lib/TrashCan.svelte';
@@ -277,25 +278,8 @@
       return [];
     }
 
-    const style = entry.dataset.styles.find((item) => item.id === entry.activeStyleId);
-    const version = getDatasetVersion(entry.dataset, entry.activeVersionId);
-    if (!style || !version) {
-      return [];
-    }
-
-    return [
-      {
-        id: entry.instanceId,
-        url: version.url,
-        layerType: style.layerTypeOverride ?? entry.dataset.mapConfig.layerType,
-        sourceType: entry.dataset.mapConfig.sourceType,
-        sourceLayer: entry.dataset.mapConfig.sourceLayer,
-        paint: style.paint,
-        layout: style.layout,
-        minzoom: entry.dataset.mapConfig.minzoom,
-        maxzoom: entry.dataset.mapConfig.maxzoom
-      }
-    ];
+    const config = createLayerConfigForDataset(entry);
+    return config ? [config] : [];
   });
 
   $: timelineSelection = timelineDatasetId

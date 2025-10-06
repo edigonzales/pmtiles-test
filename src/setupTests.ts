@@ -12,9 +12,47 @@ if (typeof window !== 'undefined' && !('ResizeObserver' in window)) {
 
 vi.mock('maplibre-gl', () => {
   class MockMap {
+    static instances: MockMap[] = [];
+
     private handlers: Record<string, Array<(...args: unknown[]) => void>> = {};
+    private sources = new Map<string, unknown>();
+    private layers = new Map<string, { id: string }>();
+
+    addSource = vi.fn((id: string, source: unknown) => {
+      this.sources.set(id, source);
+    });
+
+    removeSource = vi.fn((id: string) => {
+      this.sources.delete(id);
+    });
+
+    getSource = vi.fn((id: string) => this.sources.get(id));
+
+    addLayer = vi.fn((layer: { id: string }) => {
+      this.layers.set(layer.id, layer);
+    });
+
+    removeLayer = vi.fn((id: string) => {
+      this.layers.delete(id);
+    });
+
+    getLayer = vi.fn((id: string) => this.layers.get(id));
+
+    setPaintProperty = vi.fn();
+    setLayoutProperty = vi.fn();
+
+    remove = vi.fn();
+
+    setStyle = vi.fn((_style: unknown) => {
+      this.sources.clear();
+      this.layers.clear();
+      this.emit('load');
+    });
+
+    isStyleLoaded = vi.fn(() => true);
 
     constructor(_options: unknown) {
+      MockMap.instances.push(this);
       setTimeout(() => this.emit('load'), 0);
     }
 
@@ -35,26 +73,6 @@ vi.mock('maplibre-gl', () => {
       handler();
       return this;
     }
-
-    remove() {}
-    setStyle(_style: unknown) {
-      this.emit('load');
-    }
-    isStyleLoaded() {
-      return true;
-    }
-    getLayer(_id: string) {
-      return undefined;
-    }
-    addLayer(_layer: unknown) {}
-    removeLayer(_id: string) {}
-    getSource(_id: string) {
-      return undefined;
-    }
-    addSource(_id: string, _source: unknown) {}
-    removeSource(_id: string) {}
-    setPaintProperty(_id: string, _name: string, _value: unknown) {}
-    setLayoutProperty(_id: string, _name: string, _value: unknown) {}
   }
 
   const addProtocol = vi.fn();
