@@ -44,8 +44,8 @@ describe('scheduleStyleReady', () => {
       })
     };
 
-    const emit = (event: string) => {
-      handlers.get(event)?.forEach((handler) => handler());
+    const emit = (event: string, payload: unknown = { type: event }) => {
+      handlers.get(event)?.forEach((handler) => handler(payload));
     };
 
     scheduleStyleReady(map as any, callback);
@@ -54,11 +54,6 @@ describe('scheduleStyleReady', () => {
     expect(callback).not.toHaveBeenCalled();
 
     emit('style.load');
-    expect(callback).not.toHaveBeenCalled();
-
-    loaded = true;
-    emit('idle');
-
     expect(callback).toHaveBeenCalledTimes(1);
     expect(map.off).toHaveBeenCalledTimes(3);
     expect(Array.from(handlers.values()).every((set) => set.size === 0)).toBe(true);
@@ -87,6 +82,38 @@ describe('scheduleStyleReady', () => {
     expect(map.off).toHaveBeenCalledTimes(3);
   });
 
+  test('ignores non-style styledata events until the style finishes loading', () => {
+    const callback = vi.fn();
+    let loaded = false;
+    const handlers = new Map<string, Set<Handler>>();
+
+    const map = {
+      isStyleLoaded: () => loaded,
+      on: vi.fn((event: string, handler: Handler) => {
+        const set = handlers.get(event) ?? new Set<Handler>();
+        set.add(handler);
+        handlers.set(event, set);
+      }),
+      off: vi.fn((event: string, handler: Handler) => {
+        handlers.get(event)?.delete(handler);
+      })
+    };
+
+    const emit = (event: string, payload: unknown = { type: event }) => {
+      handlers.get(event)?.forEach((handler) => handler(payload));
+    };
+
+    scheduleStyleReady(map as any, callback);
+
+    emit('styledata', { type: 'styledata', dataType: 'source' });
+    expect(callback).not.toHaveBeenCalled();
+
+    loaded = true;
+    emit('idle', { type: 'idle' });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
+
   test('supports maps that only expose once handlers', () => {
     const callback = vi.fn();
     let loaded = false;
@@ -104,11 +131,7 @@ describe('scheduleStyleReady', () => {
     expect(map.once).toHaveBeenCalledTimes(3);
     expect(callback).not.toHaveBeenCalled();
 
-    handlers.get('styledata')?.();
-    expect(callback).not.toHaveBeenCalled();
-
-    loaded = true;
-    handlers.get('idle')?.();
+    handlers.get('styledata')?.({ type: 'styledata', dataType: 'style' });
 
     expect(callback).toHaveBeenCalledTimes(1);
   });

@@ -68,8 +68,27 @@ export const scheduleStyleReady = (map: MapWithEvents, callback: StyleReadyCallb
     callback();
   };
 
-  const handleEvent: StyleEventHandler = () => {
+  const handleEvent: StyleEventHandler = (event) => {
     if (completed) return;
+    const eventType =
+      typeof event === 'object' && event !== null && 'type' in event
+        ? (event as { type?: string }).type
+        : undefined;
+    const dataType =
+      typeof event === 'object' && event !== null && 'dataType' in event
+        ? (event as { dataType?: string }).dataType
+        : undefined;
+
+    if (eventType === 'styledata' && dataType === 'style') {
+      finish();
+      return;
+    }
+
+    if (eventType === 'style.load') {
+      finish();
+      return;
+    }
+
     if (map.isStyleLoaded?.()) {
       finish();
       return;
