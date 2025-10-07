@@ -117,7 +117,10 @@
 
   const scheduleSync = () => {
     if (!map) return;
-    if (map.isStyleLoaded?.()) {
+
+    const performSync = () => {
+      if (!map) return;
+      pendingSync = false;
       syncPmtilesLayers({
         map,
         pmtilesLayers: resolvePmtilesLayers(),
@@ -127,23 +130,30 @@
         prepareSource: preparePmtilesSource,
         logger: console
       });
+    };
+
+    if (map.isStyleLoaded?.()) {
+      performSync();
       return;
     }
 
     if (!pendingSync) {
       pendingSync = true;
-      map.once('load', () => {
-        pendingSync = false;
-        syncPmtilesLayers({
-          map: map!,
-          pmtilesLayers: resolvePmtilesLayers(),
-          attachedLayerIds,
-          layerStates,
-          getSourceId,
-          prepareSource: preparePmtilesSource,
-          logger: console
-        });
-      });
+      let syncTriggered = false;
+      const handleStyleReady = () => {
+        if (syncTriggered) {
+          return;
+        }
+        if (map?.isStyleLoaded && !map.isStyleLoaded()) {
+          map.once('style.load', handleStyleReady);
+          return;
+        }
+        syncTriggered = true;
+        performSync();
+      };
+
+      map.once('style.load', handleStyleReady);
+      map.once('load', handleStyleReady);
     }
   };
 
@@ -284,7 +294,7 @@
     attachedLayerIds.clear();
     layerStates.clear();
     map.setStyle(basemapConfigs[basemap].style as any);
-    map.once('load', () => {
+    map.once('style.load', () => {
       scheduleSync();
       dispatch('ready', map!);
     });

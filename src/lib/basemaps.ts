@@ -1,4 +1,5 @@
 import type { StyleSpecification } from 'maplibre-gl';
+import type { LayerRole } from '$lib/types/pmtiles';
 
 export type BasemapId =
   | 'empty'
@@ -12,6 +13,7 @@ export interface BasemapConfig {
   label: string;
   description: string;
   style: StyleSpecification | string;
+  role: LayerRole;
 }
 
 const osmStyle: StyleSpecification = {
@@ -86,31 +88,36 @@ export const basemapConfigs: Record<BasemapId, BasemapConfig> = {
     id: 'swisstopo',
     label: 'swisstopo Vector Basemap',
     description: 'Official Swiss vector basemap provided by swisstopo.',
-    style: swisstopoStyle
+    style: swisstopoStyle,
+    role: 'background'
   },
   swisstopoImagery: {
     id: 'swisstopoImagery',
     label: 'swisstopo Imagery Basemap',
     description: 'High-resolution imagery basemap provided by swisstopo.',
-    style: swisstopoImageryStyle
+    style: swisstopoImageryStyle,
+    role: 'background'
   },
   hintergrundkarte: {
     id: 'hintergrundkarte',
     label: 'Hintergrundkarte schwarz/weiss',
     description: 'Black and white background map provided by geo.so.ch.',
-    style: hintergrundkarteStyle
+    style: hintergrundkarteStyle,
+    role: 'background'
   },
   osm: {
     id: 'osm',
     label: 'OpenStreetMap',
     description: 'Community driven basemap sourced from openstreetmap.org tiles.',
-    style: osmStyle
+    style: osmStyle,
+    role: 'background'
   },
   empty: {
     id: 'empty',
     label: 'No background',
     description: 'A blank white background suitable for focusing on overlay data.',
-    style: emptyStyle
+    style: emptyStyle,
+    role: 'background'
   }
 };
 

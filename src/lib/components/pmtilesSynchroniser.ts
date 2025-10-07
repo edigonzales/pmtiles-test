@@ -121,10 +121,13 @@ export const syncPmtilesLayers = ({
         });
         continue;
       }
+      const role = config.role ?? 'foreground';
+      const metadata = { ...(config.metadata ?? {}), role };
       info(logger, 'MapView: adding PMTiles layer', {
         layerId: config.id,
         sourceLayer: config.sourceLayer,
-        layerType: config.layerType
+        layerType: config.layerType,
+        role
       });
       map.addLayer(
         {
@@ -135,7 +138,8 @@ export const syncPmtilesLayers = ({
           paint: config.paint ?? {},
           layout: config.layout ?? {},
           minzoom: config.minzoom,
-          maxzoom: config.maxzoom
+          maxzoom: config.maxzoom,
+          metadata
         } as any
       );
       attachedLayerIds.add(config.id);

@@ -53,6 +53,7 @@ export const createLayerConfigForDataset = (
     paint,
     layout,
     minzoom: entry.dataset.mapConfig.minzoom,
-    maxzoom: entry.dataset.mapConfig.maxzoom
+    maxzoom: entry.dataset.mapConfig.maxzoom,
+    role: 'foreground'
   } satisfies PMTilesLayerConfig;
 };

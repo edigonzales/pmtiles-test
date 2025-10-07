@@ -71,6 +71,7 @@ describe('pmtilesLayers service', () => {
     expect(config?.layerType).toBe('line');
     expect(config?.sourceType).toBe('vector');
     expect(config?.layout).toEqual({ visibility: 'visible' });
+    expect(config?.role).toBe('foreground');
   });
 
   it('uses the dataset fill paint definition when available', () => {
