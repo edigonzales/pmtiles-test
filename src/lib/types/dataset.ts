@@ -14,6 +14,7 @@ export interface DatasetStyleDefinition {
   layerTypeOverride?: LayerType;
   paint?: PMTilesLayerConfig['paint'];
   layout?: PMTilesLayerConfig['layout'];
+  metadata?: Record<string, unknown>;
 }
 
 export interface DatasetVersion {

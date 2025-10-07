@@ -26,9 +26,16 @@ const createDataset = (layerType: LayerType): DatasetMetadata => ({
       id: 'default',
       label: 'Default',
       description: 'Default style',
-      paint: {
-        'line-width': 4
-      },
+      paint:
+        layerType === 'fill'
+          ? {
+              'fill-color': '#123456',
+              'fill-opacity': 0.6,
+              'fill-outline-color': '#654321'
+            }
+          : {
+              'line-width': 4
+            },
       layout: {
         visibility: 'visible'
       }
@@ -66,8 +73,21 @@ describe('pmtilesLayers service', () => {
     expect(config?.layout).toEqual({ visibility: 'visible' });
   });
 
-  it('creates a simple red fill style for polygon datasets', () => {
+  it('uses the dataset fill paint definition when available', () => {
     const entry = createSelectedDataset('fill');
+    const config = createLayerConfigForDataset(entry);
+
+    expect(config?.paint).toEqual({
+      'fill-color': '#123456',
+      'fill-opacity': 0.6,
+      'fill-outline-color': '#654321'
+    });
+  });
+
+  it('falls back to a simple red fill when the style has no paint definition', () => {
+    const entry = createSelectedDataset('fill');
+    entry.dataset.styles[0].paint = undefined;
+
     const config = createLayerConfigForDataset(entry);
 
     expect(config?.paint).toEqual(

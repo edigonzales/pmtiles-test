@@ -216,6 +216,30 @@
           console.error('MapView: map error', event?.error ?? event);
         });
 
+        const estimateScaleDenominator = (zoomLevel: number, latitude: number) => {
+          const EARTH_RADIUS_METERS = 6378137;
+          const TILE_SIZE = 512;
+          const STANDARD_DPI = 96;
+          const metersPerPixel =
+            (Math.cos((latitude * Math.PI) / 180) * 2 * Math.PI * EARTH_RADIUS_METERS) /
+            (TILE_SIZE * Math.pow(2, zoomLevel));
+          const metersPerInch = 0.0254;
+          const scale = (metersPerPixel * STANDARD_DPI) / metersPerInch;
+          return Number.isFinite(scale) ? Math.round(scale) : null;
+        };
+
+        map.on('zoomend', () => {
+          const currentZoom = map?.getZoom();
+          if (typeof currentZoom === 'number') {
+            const centerLatitude = map?.getCenter()?.lat ?? 0;
+            const scaleDenominator = estimateScaleDenominator(currentZoom, centerLatitude);
+            console.log('MapView: zoom level changed', {
+              zoom: currentZoom,
+              scale: scaleDenominator ? `1:${scaleDenominator.toLocaleString()}` : null
+            });
+          }
+        });
+
         if (AttributionControlCtor) {
           map.addControl(new AttributionControlCtor({ compact: true }));
         }

@@ -1,0 +1,731 @@
+[
+  {
+    "id": "ch.so.energy.solar-potential",
+    "title": "Solar Potential Roofs – Canton Solothurn",
+    "summary": "Detailed assessment of rooftop solar potential for every building in the canton.",
+    "description": "The dataset estimates the photovoltaic and solar thermal potential of building roofs using LiDAR derived surfaces and energy simulations. Attributes include irradiation levels, suitable area and recommended technology class.",
+    "theme": "Energy & Environment",
+    "provider": "Amt für Geoinformation Kanton Solothurn",
+    "geometryType": "Polygon",
+    "keywords": [
+      "solar",
+      "energy",
+      "rooftop",
+      "photovoltaic",
+      "thermal"
+    ],
+    "defaultStyleId": "potential-classes",
+    "defaultVersionId": "2024-q2",
+    "mapConfig": {
+      "layerType": "fill",
+      "sourceType": "vector",
+      "sourceLayer": "grundnutzung",
+      "minzoom": 12,
+      "maxzoom": 22
+    },
+    "styles": [
+      {
+        "id": "potential-classes",
+        "label": "Solar potential classes",
+        "description": "Choropleth style highlighting roofs by their photovoltaic potential class.",
+        "paint": {
+          "fill-color": [
+            "match",
+            [
+              "get",
+              "pv_class"
+            ],
+            "very_high",
+            "#42be65",
+            "high",
+            "#24a148",
+            "medium",
+            "#08bdba",
+            "low",
+            "#007d79",
+            "very_low",
+            "#005d5d",
+            "#3d5467"
+          ],
+          "fill-opacity": 0.75
+        }
+      },
+      {
+        "id": "technology-outline",
+        "label": "Technology outline",
+        "description": "Outlined representation showing the recommended technology per roof segment.",
+        "layerTypeOverride": "line",
+        "paint": {
+          "line-color": [
+            "match",
+            [
+              "get",
+              "tech"
+            ],
+            "pv",
+            "#0f62fe",
+            "thermal",
+            "#ff832b",
+            "hybrid",
+            "#8a3ffc",
+            "#525252"
+          ],
+          "line-width": [
+            "interpolate",
+            [
+              "linear"
+            ],
+            [
+              "zoom"
+            ],
+            12,
+            0.4,
+            18,
+            2.2
+          ]
+        }
+      }
+    ],
+    "versions": [
+      {
+        "id": "2024-q2",
+        "label": "Q2 2024 release",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
+        "effectiveFrom": "2024-06-15",
+        "summary": "Incorporates 2023 aerial survey updates and refined irradiation modelling.",
+        "changes": [
+          "Integrated 7,500 newly constructed roofs from the 2023 cadastral update.",
+          "Improved minimum irradiance threshold for narrow dormers."
+        ]
+      },
+      {
+        "id": "2023-q4",
+        "label": "Q4 2023 release",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
+        "effectiveFrom": "2023-11-02",
+        "summary": "Adds building refurbishments and enhanced shading model.",
+        "changes": [
+          "Updated shading due to tree growth captured in 2022 LiDAR.",
+          "Recalculated photovoltaic performance for 3,100 roofs."
+        ]
+      },
+      {
+        "id": "2023-q1",
+        "label": "Q1 2023 release",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
+        "effectiveFrom": "2023-02-10",
+        "summary": "Baseline publication aligned with the energy strategy 2050.",
+        "changes": [
+          "Initial publication of canton-wide rooftop solar suitability."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ch.so.planning.zoning",
+    "title": "Municipal Zoning Plans",
+    "summary": "Current legally binding zoning ordinances harmonised for the entire canton.",
+    "description": "Generalised zoning polygons compiled from municipal plans. Each polygon contains land-use category, utilisation rate, building regulations, and legal references. Ideal for planning applications and permit checks.",
+    "theme": "Spatial Planning",
+    "provider": "Amt für Raumplanung Kanton Solothurn",
+    "geometryType": "Polygon",
+    "keywords": [
+      "zoning",
+      "land use",
+      "planning",
+      "ordinance"
+    ],
+    "defaultStyleId": "official-zoning",
+    "defaultVersionId": "2024-01",
+    "mapConfig": {
+      "layerType": "fill",
+      "sourceType": "vector",
+      "sourceLayer": "grundnutzung",
+      "minzoom": 10,
+      "maxzoom": 22
+    },
+    "styles": [
+      {
+        "id": "official-zoning",
+        "label": "Official zoning colours",
+        "description": "Reproduction of the canton Solothurn zoning palette derived from the geo.so.ch MapServer SLD.",
+        "paint": {
+          "fill-color": [
+            "match",
+            [
+              "get",
+              "typ_code_kt"
+            ],
+            "110",
+            "#ffff33",
+            "111",
+            "#ffcc00",
+            "112",
+            "#ff9900",
+            "113",
+            "#ff6600",
+            "114",
+            "#ffcc99",
+            "115",
+            "#ff9966",
+            "116",
+            "#cc6633",
+            "117",
+            "#993300",
+            "120",
+            "#ffccff",
+            "121",
+            "#ff99ff",
+            "122",
+            "#ff66ff",
+            "130",
+            "#ffccff",
+            "131",
+            "#ffccff",
+            "132",
+            "#ffccff",
+            "133",
+            "#ffccff",
+            "134",
+            "#cc3333",
+            "140",
+            "#cc9966",
+            "141",
+            "#996633",
+            "142",
+            "#663300",
+            "150",
+            "#cccccc",
+            "151",
+            "#999999",
+            "160",
+            "#ccff66",
+            "161",
+            "#99ff33",
+            "162",
+            "#66ff00",
+            "163",
+            "#66cc33",
+            "169",
+            "#669933",
+            "170",
+            "#cc99ff",
+            "180",
+            "#fafafa",
+            "181",
+            "#fafafa",
+            "182",
+            "#fafafa",
+            "189",
+            "#fafafa",
+            "190",
+            "#9999ff",
+            "210",
+            "#ffffcc",
+            "220",
+            "#ffff99",
+            "230",
+            "#ffff66",
+            "290",
+            "#ffff66",
+            "310",
+            "#cccc99",
+            "311",
+            "#999966",
+            "319",
+            "#666633",
+            "320",
+            "#00ccff",
+            "329",
+            "#99ffff",
+            "390",
+            "#4dff73",
+            "420",
+            "#fafafa",
+            "421",
+            "#fafafa",
+            "422",
+            "#fafafa",
+            "429",
+            "#fafafa",
+            "430",
+            "#ffffcc",
+            "431",
+            "#ffffcc",
+            "432",
+            "#ffffcc",
+            "439",
+            "#ffffcc",
+            "440",
+            "#ccffcc",
+            "490",
+            "#ccffff",
+            "491",
+            "#99cccc",
+            "492",
+            "#669999",
+            "499",
+            "#336666",
+            "#cccccc"
+          ],
+          "fill-opacity": 0.85,
+          "fill-outline-color": "rgba(0, 0, 0, 0.15)"
+        },
+        "layout": {
+          "visibility": "visible"
+        },
+        "metadata": {
+          "legendEntries": [
+            {
+              "code": "110",
+              "label": "Wohnzone 1 G",
+              "color": "#ffff33"
+            },
+            {
+              "code": "111",
+              "label": "Wohnzone 2 G",
+              "color": "#ffcc00"
+            },
+            {
+              "code": "112",
+              "label": "Wohnzone 3 G",
+              "color": "#ff9900"
+            },
+            {
+              "code": "113",
+              "label": "Wohnzone 4 G",
+              "color": "#ff6600"
+            },
+            {
+              "code": "114",
+              "label": "Wohnzone 5 G",
+              "color": "#ffcc99"
+            },
+            {
+              "code": "115",
+              "label": "Wohnzone 6 G",
+              "color": "#ff9966"
+            },
+            {
+              "code": "116",
+              "label": "Wohnzone 7 G und grösser",
+              "color": "#cc6633"
+            },
+            {
+              "code": "117",
+              "label": "Zone für Terrassenhäuser / Terrassensiedlung",
+              "color": "#993300"
+            },
+            {
+              "code": "120",
+              "label": "Gewerbezone ohne Wohnen",
+              "color": "#ffccff"
+            },
+            {
+              "code": "121",
+              "label": "Industriezone",
+              "color": "#ff99ff"
+            },
+            {
+              "code": "122",
+              "label": "Arbeitszone",
+              "color": "#ff66ff"
+            },
+            {
+              "code": "130",
+              "label": "Gewerbezone mit Wohnen / Mischzone",
+              "color": "#ffccff"
+            },
+            {
+              "code": "131",
+              "label": "Gewerbezone mit Wohnen / Mischzone 2 G",
+              "color": "#ffccff"
+            },
+            {
+              "code": "132",
+              "label": "Gewerbezone mit Wohnen / Mischzone 3 G",
+              "color": "#ffccff"
+            },
+            {
+              "code": "133",
+              "label": "Gewerbezone mit Wohnen / Mischzone 4 G und grösser",
+              "color": "#ffccff"
+            },
+            {
+              "code": "134",
+              "label": "Zonen für publikumsintensive Anlagen",
+              "color": "#cc3333"
+            },
+            {
+              "code": "140",
+              "label": "Kernzone",
+              "color": "#cc9966"
+            },
+            {
+              "code": "141",
+              "label": "Zentrumszone",
+              "color": "#996633"
+            },
+            {
+              "code": "142",
+              "label": "Erhaltungszone",
+              "color": "#663300"
+            },
+            {
+              "code": "150",
+              "label": "Zone für öffentliche Bauten",
+              "color": "#cccccc"
+            },
+            {
+              "code": "151",
+              "label": "Zone für öffentliche Anlagen",
+              "color": "#999999"
+            },
+            {
+              "code": "160",
+              "label": "Grün- und Freihaltezone innerhalb Bauzone",
+              "color": "#ccff66"
+            },
+            {
+              "code": "161",
+              "label": "kommunale Uferschutzzone innerhalb Bauzone",
+              "color": "#99ff33"
+            },
+            {
+              "code": "162",
+              "label": "Landwirtschaftliche Kernzone",
+              "color": "#66ff00"
+            },
+            {
+              "code": "163",
+              "label": "Weilerzone",
+              "color": "#66cc33"
+            },
+            {
+              "code": "169",
+              "label": "weitere eingeschränkte Bauzonen",
+              "color": "#669933"
+            },
+            {
+              "code": "170",
+              "label": "Zone für Freizeit und Erholung",
+              "color": "#cc99ff"
+            },
+            {
+              "code": "180",
+              "label": "Verkehrszonen innerhalb Baugebiet",
+              "color": "#fafafa"
+            },
+            {
+              "code": "181",
+              "label": "Verkehrszonen innerhalb Baugebiet",
+              "color": "#fafafa"
+            },
+            {
+              "code": "182",
+              "label": "Verkehrszonen innerhalb Baugebiet",
+              "color": "#fafafa"
+            },
+            {
+              "code": "189",
+              "label": "Verkehrszonen innerhalb Baugebiet",
+              "color": "#fafafa"
+            },
+            {
+              "code": "190",
+              "label": "Spezialzone",
+              "color": "#9999ff"
+            },
+            {
+              "code": "210",
+              "label": "Landwirtschaftszone",
+              "color": "#ffffcc"
+            },
+            {
+              "code": "220",
+              "label": "spezielle Landwirtschaftszone",
+              "color": "#ffff99"
+            },
+            {
+              "code": "230",
+              "label": "Rebbauzone",
+              "color": "#ffff66"
+            },
+            {
+              "code": "290",
+              "label": "weitere Landwirtschaftszonen",
+              "color": "#ffff66"
+            },
+            {
+              "code": "310",
+              "label": "kommunale Naturschutzzone",
+              "color": "#cccc99"
+            },
+            {
+              "code": "311",
+              "label": "Waldrandschutzzone",
+              "color": "#999966"
+            },
+            {
+              "code": "319",
+              "label": "weitere Schutzzonen für Lebensräume und Landschaften",
+              "color": "#666633"
+            },
+            {
+              "code": "320",
+              "label": "Gewässer",
+              "color": "#00ccff"
+            },
+            {
+              "code": "329",
+              "label": "weitere Zonen für Gewässer und ihre Ufer",
+              "color": "#99ffff"
+            },
+            {
+              "code": "390",
+              "label": "weitere Schutzzonen ausserhalb Bauzonen",
+              "color": "#4dff73"
+            },
+            {
+              "code": "420",
+              "label": "Verkehrsfläche Strasse",
+              "color": "#fafafa"
+            },
+            {
+              "code": "421",
+              "label": "Verkehrsfläche Bahnareal",
+              "color": "#fafafa"
+            },
+            {
+              "code": "422",
+              "label": "Verkehrsfläche Flugplatzareal",
+              "color": "#fafafa"
+            },
+            {
+              "code": "429",
+              "label": "weitere Verkehrsflächen",
+              "color": "#fafafa"
+            },
+            {
+              "code": "430",
+              "label": "Reservezone Wohnzone, Mischzone, Kernzone und Zentrumszone",
+              "color": "#ffffcc"
+            },
+            {
+              "code": "431",
+              "label": "Reservezone Arbeiten",
+              "color": "#ffffcc"
+            },
+            {
+              "code": "432",
+              "label": "Reservezone OeBA",
+              "color": "#ffffcc"
+            },
+            {
+              "code": "439",
+              "label": "Reservezone",
+              "color": "#ffffcc"
+            },
+            {
+              "code": "440",
+              "label": "Wald",
+              "color": "#ccffcc"
+            },
+            {
+              "code": "490",
+              "label": "Golfzone",
+              "color": "#ccffff"
+            },
+            {
+              "code": "491",
+              "label": "Abbauzone",
+              "color": "#99cccc"
+            },
+            {
+              "code": "492",
+              "label": "Deponiezone",
+              "color": "#669999"
+            },
+            {
+              "code": "499",
+              "label": "weitere Bauzonen nach Art. 18 RPG ausserhalb Bauzonen",
+              "color": "#336666"
+            }
+          ],
+          "source": "https://geo.so.ch/api/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetStyles&LAYERS=ch.so.arp.nutzungsplanung.grundnutzung"
+        }
+      },
+      {
+        "id": "outline-only",
+        "label": "Outline only",
+        "description": "Transparent fill with emphasised zoning boundaries.",
+        "paint": {
+          "fill-color": "#ffffff",
+          "fill-opacity": 0.05,
+          "fill-outline-color": "rgba(0, 0, 0, 0.35)"
+        },
+        "layout": {
+          "visibility": "visible"
+        }
+      }
+    ],
+    "versions": [
+      {
+        "id": "2024-01",
+        "label": "January 2024 (harmonised)",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
+        "effectiveFrom": "2024-01-20",
+        "summary": "Includes Bettlach, Grenchen and Oensingen revisions ratified late 2023.",
+        "changes": [
+          "Added new mixed-use zone around Oensingen rail station.",
+          "Reclassified Bettlach industrial lots as technology park."
+        ]
+      },
+      {
+        "id": "2023-05",
+        "label": "May 2023 update",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
+        "effectiveFrom": "2023-05-11",
+        "summary": "Incorporates legal changes up to April 2023.",
+        "changes": [
+          "Extended residential zone in Derendingen west.",
+          "Updated agricultural reserve boundaries in Leimental."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ch.so.transport.cycling-network",
+    "title": "Cycling Network & Quality Levels",
+    "summary": "Hierarchy of cycling infrastructure with safety and comfort ratings.",
+    "description": "Authoritative bicycle network dataset including on-road lanes, separated paths, and recommended connections. Attributes include surface type, width, slope, and a quality score derived from field surveys.",
+    "theme": "Mobility",
+    "provider": "Amt für Verkehr und Tiefbau Kanton Solothurn",
+    "geometryType": "Line",
+    "keywords": [
+      "cycling",
+      "mobility",
+      "transport",
+      "network"
+    ],
+    "defaultStyleId": "quality-levels",
+    "defaultVersionId": "2024-routing",
+    "mapConfig": {
+      "layerType": "line",
+      "sourceType": "vector",
+      "sourceLayer": "grundnutzung",
+      "minzoom": 8,
+      "maxzoom": 22
+    },
+    "styles": [
+      {
+        "id": "quality-levels",
+        "label": "Quality levels",
+        "description": "Colours reflect the comfort level for everyday cyclists.",
+        "paint": {
+          "line-color": [
+            "interpolate",
+            [
+              "linear"
+            ],
+            [
+              "get",
+              "quality"
+            ],
+            1,
+            "#fa4d56",
+            3,
+            "#f1c21b",
+            5,
+            "#42be65"
+          ],
+          "line-width": [
+            "interpolate",
+            [
+              "linear"
+            ],
+            [
+              "zoom"
+            ],
+            8,
+            1,
+            14,
+            3,
+            18,
+            6
+          ]
+        }
+      },
+      {
+        "id": "surface-type",
+        "label": "Surface type",
+        "description": "Alternative palette to distinguish paved versus unpaved segments.",
+        "paint": {
+          "line-color": [
+            "match",
+            [
+              "get",
+              "surface"
+            ],
+            "paved",
+            "#0f62fe",
+            "gravel",
+            "#8d3bff",
+            "dirt",
+            "#d2a106",
+            "unknown",
+            "#8d8d8d",
+            "#161616"
+          ],
+          "line-width": [
+            "interpolate",
+            [
+              "linear"
+            ],
+            [
+              "zoom"
+            ],
+            8,
+            1,
+            14,
+            3.4,
+            18,
+            5.6
+          ],
+          "line-dasharray": [
+            2,
+            2
+          ]
+        }
+      }
+    ],
+    "versions": [
+      {
+        "id": "2024-routing",
+        "label": "Routing network 2024",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
+        "effectiveFrom": "2024-08-01",
+        "summary": "Aligns with the 2024 cantonal mobility programme.",
+        "changes": [
+          "Quality rating reviewed after the 2023 safety audit.",
+          "Added separated lanes along Kantonsstrasse 12 in Olten."
+        ]
+      },
+      {
+        "id": "2023-routing",
+        "label": "Routing network 2023",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
+        "effectiveFrom": "2023-07-05",
+        "summary": "Baseline routing network published with performance indicators."
+      },
+      {
+        "id": "2022-planning",
+        "label": "Planning network 2022",
+        "url": "http://localhost:8080/grundnutzung.pmtiles",
+        "effectiveFrom": "2022-03-18",
+        "summary": "Historic planning version used for long-term projects.",
+        "effectiveTo": "2023-07-04"
+      }
+    ]
+  }
+]
