@@ -283,7 +283,7 @@
     attachedLayerIds.clear();
     layerStates.clear();
     map.setStyle(basemapConfigs[basemap].style as any);
-    map.once('style.load', () => {
+    scheduleStyleReady(map, () => {
       scheduleSync();
       dispatch('ready', map!);
     });
