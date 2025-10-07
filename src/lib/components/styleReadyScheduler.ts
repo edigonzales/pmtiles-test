@@ -68,6 +68,19 @@ export const scheduleStyleReady = (map: MapWithEvents, callback: StyleReadyCallb
     callback();
   };
 
+  const maybeFinish = (triggeredByEvent: boolean) => {
+    if (completed) return;
+
+    if (map.isStyleLoaded?.()) {
+      finish();
+      return;
+    }
+
+    if (triggeredByEvent && !pollTimer) {
+      scheduleNextPoll();
+    }
+  };
+
   const handleEvent: StyleEventHandler = (event) => {
     if (completed) return;
     const eventType =
@@ -79,24 +92,19 @@ export const scheduleStyleReady = (map: MapWithEvents, callback: StyleReadyCallb
         ? (event as { dataType?: string }).dataType
         : undefined;
 
-    if (eventType === 'styledata' && dataType === 'style') {
-      finish();
+    if (eventType === 'styledata' && dataType && dataType !== 'style') {
+      if (!pollTimer) {
+        scheduleNextPoll();
+      }
       return;
     }
 
-    if (eventType === 'style.load') {
-      finish();
+    if (eventType === 'style.load' || eventType === 'idle' || eventType === 'styledata') {
+      maybeFinish(true);
       return;
     }
 
-    if (map.isStyleLoaded?.()) {
-      finish();
-      return;
-    }
-
-    if (!pollTimer) {
-      scheduleNextPoll();
-    }
+    maybeFinish(false);
   };
 
   if (hasOnOff && typeof map.on === 'function') {

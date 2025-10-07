@@ -54,6 +54,11 @@ describe('scheduleStyleReady', () => {
     expect(callback).not.toHaveBeenCalled();
 
     emit('style.load');
+    expect(callback).not.toHaveBeenCalled();
+
+    loaded = true;
+    emit('idle');
+
     expect(callback).toHaveBeenCalledTimes(1);
     expect(map.off).toHaveBeenCalledTimes(3);
     expect(Array.from(handlers.values()).every((set) => set.size === 0)).toBe(true);
@@ -109,7 +114,7 @@ describe('scheduleStyleReady', () => {
     expect(callback).not.toHaveBeenCalled();
 
     loaded = true;
-    emit('idle', { type: 'idle' });
+    emit('styledata', { type: 'styledata', dataType: 'style' });
 
     expect(callback).toHaveBeenCalledTimes(1);
   });
@@ -131,6 +136,7 @@ describe('scheduleStyleReady', () => {
     expect(map.once).toHaveBeenCalledTimes(3);
     expect(callback).not.toHaveBeenCalled();
 
+    loaded = true;
     handlers.get('styledata')?.({ type: 'styledata', dataType: 'style' });
 
     expect(callback).toHaveBeenCalledTimes(1);
