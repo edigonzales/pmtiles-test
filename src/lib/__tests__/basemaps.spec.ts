@@ -69,4 +69,12 @@ describe('basemap configurations', () => {
       throw new Error('swisstopo imagery style should be provided as a hosted style URL');
     }
   });
+
+  it('marks every basemap as a background layer', () => {
+    const configs = Object.values(basemapConfigs);
+    expect(configs).not.toHaveLength(0);
+    for (const config of configs) {
+      expect(config.role).toBe('background');
+    }
+  });
 });

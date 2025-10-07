@@ -9,6 +9,8 @@ export type LayerType =
   | 'raster'
   | 'hillshade';
 
+export type LayerRole = 'background' | 'foreground';
+
 export type PMTilesLayerConfig = {
   id: string;
   url: string;
@@ -19,4 +21,6 @@ export type PMTilesLayerConfig = {
   layout?: Record<string, unknown>;
   minzoom?: number;
   maxzoom?: number;
+  role?: LayerRole;
+  metadata?: Record<string, unknown>;
 };

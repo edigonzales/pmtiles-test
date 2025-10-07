@@ -64,7 +64,8 @@ describe('syncPmtilesLayers', () => {
       expect.objectContaining({
         id: layerConfig.id,
         source: `${layerConfig.id}-source`,
-        type: layerConfig.layerType
+        type: layerConfig.layerType,
+        metadata: expect.objectContaining({ role: 'foreground' })
       })
     );
     expect(attachedLayerIds.has(layerConfig.id)).toBe(true);
@@ -72,6 +73,34 @@ describe('syncPmtilesLayers', () => {
       sourceId: `${layerConfig.id}-source`,
       url: layerConfig.url
     });
+  });
+
+  test('merges metadata and preserves custom layer roles', () => {
+    const map = createMockMap();
+    const attachedLayerIds = new Set<string>();
+    const layerStates = new Map<string, { sourceId: string; url: string }>();
+
+    const configWithMetadata: PMTilesLayerConfig = {
+      ...layerConfig,
+      id: 'meta-layer',
+      metadata: { category: 'test' },
+      role: 'background'
+    };
+
+    syncPmtilesLayers({
+      map: map as unknown as MaplibreLike,
+      pmtilesLayers: [configWithMetadata],
+      attachedLayerIds,
+      layerStates,
+      getSourceId: (layerId) => `${layerId}-source`
+    });
+
+    expect(map.addLayer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: configWithMetadata.id,
+        metadata: { category: 'test', role: 'background' }
+      })
+    );
   });
 
   test('waits to add vector layers until a source layer is provided', () => {

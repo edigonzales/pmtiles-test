@@ -6,6 +6,7 @@
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { basemapConfigs, type BasemapId } from '$lib/basemaps';
   import { syncPmtilesLayers, type LayerState } from './pmtilesSynchroniser';
+  import { scheduleStyleReady } from './styleReadyScheduler';
   import { getDefaultVectorLayer } from './pmtilesMetadata';
   import type { Map as MaplibreMap } from 'maplibre-gl';
   import type { PMTilesLayerConfig } from '$lib/types/pmtiles';
@@ -117,7 +118,10 @@
 
   const scheduleSync = () => {
     if (!map) return;
-    if (map.isStyleLoaded?.()) {
+
+    const performSync = () => {
+      if (!map) return;
+      pendingSync = false;
       syncPmtilesLayers({
         map,
         pmtilesLayers: resolvePmtilesLayers(),
@@ -127,22 +131,17 @@
         prepareSource: preparePmtilesSource,
         logger: console
       });
+    };
+
+    if (map.isStyleLoaded?.()) {
+      performSync();
       return;
     }
 
     if (!pendingSync) {
       pendingSync = true;
-      map.once('load', () => {
-        pendingSync = false;
-        syncPmtilesLayers({
-          map: map!,
-          pmtilesLayers: resolvePmtilesLayers(),
-          attachedLayerIds,
-          layerStates,
-          getSourceId,
-          prepareSource: preparePmtilesSource,
-          logger: console
-        });
+      scheduleStyleReady(map, () => {
+        performSync();
       });
     }
   };
@@ -284,7 +283,7 @@
     attachedLayerIds.clear();
     layerStates.clear();
     map.setStyle(basemapConfigs[basemap].style as any);
-    map.once('load', () => {
+    scheduleStyleReady(map, () => {
       scheduleSync();
       dispatch('ready', map!);
     });
