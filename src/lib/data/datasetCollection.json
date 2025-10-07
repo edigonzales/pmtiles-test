@@ -154,7 +154,7 @@
             "match",
             [
               "get",
-              "typ_code_kt"
+              "typ_kantonal_code"
             ],
             "110",
             "#ffff33",
