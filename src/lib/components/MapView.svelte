@@ -6,6 +6,7 @@
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { basemapConfigs, type BasemapId } from '$lib/basemaps';
   import { syncPmtilesLayers, type LayerState } from './pmtilesSynchroniser';
+  import { scheduleStyleReady } from './styleReadyScheduler';
   import { getDefaultVectorLayer } from './pmtilesMetadata';
   import type { Map as MaplibreMap } from 'maplibre-gl';
   import type { PMTilesLayerConfig } from '$lib/types/pmtiles';
@@ -139,21 +140,9 @@
 
     if (!pendingSync) {
       pendingSync = true;
-      let syncTriggered = false;
-      const handleStyleReady = () => {
-        if (syncTriggered) {
-          return;
-        }
-        if (map?.isStyleLoaded && !map.isStyleLoaded()) {
-          map.once('style.load', handleStyleReady);
-          return;
-        }
-        syncTriggered = true;
+      scheduleStyleReady(map, () => {
         performSync();
-      };
-
-      map.once('style.load', handleStyleReady);
-      map.once('load', handleStyleReady);
+      });
     }
   };
 
