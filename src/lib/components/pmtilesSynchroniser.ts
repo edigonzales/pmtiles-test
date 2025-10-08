@@ -170,6 +170,6 @@ export const syncPmtilesLayers = ({
       sourceLayer: layer?.['source-layer'] ?? null,
       visibility: layer?.layout?.visibility ?? 'visible'
     }));
-    info(logger, 'MapView: current map layer order', layerSummaries);
+    info(logger, 'MapView: current map layer order', { layers: layerSummaries });
   }
 };
