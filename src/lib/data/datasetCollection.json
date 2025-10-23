@@ -727,5 +727,50 @@
         "effectiveTo": "2023-07-04"
       }
     ]
+  },
+  {
+    "id": "ch.so.environment.bodenbedeckung",
+    "title": "Land Cover – Canton Solothurn",
+    "summary": "Comprehensive inventory of land cover categories across the canton.",
+    "description": "Bodenbedeckung polygons derived from the official cadastral survey capture the dominant surface material for every parcel-sized segment. The dataset is suitable for environmental reporting, urban heat modelling and planning analyses that require consistent land cover classes.",
+    "theme": "Environment & Planning",
+    "provider": "Amt für Geoinformation Kanton Solothurn",
+    "geometryType": "Polygon",
+    "keywords": [
+      "land cover",
+      "bodenbedeckung",
+      "environment",
+      "planning"
+    ],
+    "defaultStyleId": "land-cover-fill",
+    "defaultVersionId": "2024-baseline",
+    "mapConfig": {
+      "layerType": "fill",
+      "sourceType": "vector",
+      "sourceLayer": "bodenbedeckung",
+      "minzoom": 1,
+      "maxzoom": 22
+    },
+    "styles": [
+      {
+        "id": "land-cover-fill",
+        "label": "Land cover fill",
+        "description": "Light blue polygons with a touch of transparency and black outlines to emphasise parcel boundaries.",
+        "paint": {
+          "fill-color": "#a6d4ff",
+          "fill-opacity": 0.45,
+          "fill-outline-color": "#000000"
+        }
+      }
+    ],
+    "versions": [
+      {
+        "id": "2024-baseline",
+        "label": "Baseline 2024",
+        "url": "http://localhost:8080/bodenbedeckung.pmtiles",
+        "effectiveFrom": "2024-01-01",
+        "summary": "Initial release of the canton-wide land cover classification compiled from the latest cadastral survey."
+      }
+    ]
   }
 ]
