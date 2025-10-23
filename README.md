@@ -115,8 +115,27 @@ ogr2ogr -f GeoJSONSeq /vsistdout/ npl_nutzungsplanung_v1_2_2056.gpkg grundnutzun
 | tippecanoe -o grundnutzung.pmtiles --minimum-zoom=10 --maximum-zoom=20 --drop-densest-as-needed -r1 -pk -pf --layer=grundnutzung --use-attribute-for-id=t_id --no-clipping
 ```
 
+```
+ogr2ogr -f GeoJSONSeq /vsistdout/ npl_nutzungsplanung_v1_2_2056.gpkg grundnutzung -lco RS=YES -t_srs EPSG:4326 \
+| tippecanoe -o grundnutzung_v2.pmtiles --minimum-zoom=1 --maximum-zoom=19 --no-clipping --no-line-simplification -r1 -pk -pf --layer=grundnutzung --use-attribute-for-id=t_id --no-clipping
+```
 
- 
+```
+ogr2ogr -f GeoJSONSeq /vsistdout/ 2601.ch.so.agi.av.mopublic.gpkg bodenbedeckung -lco RS=YES -t_srs EPSG:4326 \
+| tippecanoe \
+  -o bodenbedeckung.pmtiles \
+  --layer=bodenbedeckung \
+  --use-attribute-for-id=t_id \
+  --minimum-zoom=1 --maximum-zoom=19 \
+  -pS \
+  --no-tiny-polygon-reduction \
+  --detect-shared-borders \
+  --no-feature-limit --no-tile-size-limit \
+  --extra-detail=13
+``` 
+
+
+
 ```
 git fetch origin pull/9/head:codex/update-interlistextdocumentservice-to-bypass-cache
 ```
